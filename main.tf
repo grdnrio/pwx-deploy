@@ -15,19 +15,20 @@ provider "aws" {
 
 # Load the latest Ubuntu AMI
 data "aws_ami" "default" {
+  
   most_recent = true
 
-  filter {
-    name   = "owner-alias"
-    values = ["099720109477"]
-  }
+    filter {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+    }
 
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-*"]
-  }
+    filter {
+        name   = "virtualization-type"
+        values = ["hvm"]
+    }
 
-  owners = ["099720109477"]
+    owners = ["099720109477"] # Canonical
 }
 
 # Create a VPC to launch our instances into
@@ -54,29 +55,6 @@ resource "aws_subnet" "default" {
   map_public_ip_on_launch = true
 }
 
-# A security group for the ELB so it is accessible via the web
-resource "aws_security_group" "services" {
-  name        = "terraform_sg_services"
-  description = "Used in the terraform"
-  vpc_id      = "${aws_vpc.default.id}"
-
-  # HTTP access from anywhere
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # outbound internet access
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 # Our default security group to access
 # the instances over SSH and HTTP
 resource "aws_security_group" "default" {
@@ -84,20 +62,35 @@ resource "aws_security_group" "default" {
   description = "Used in the terraform"
   vpc_id      = "${aws_vpc.default.id}"
 
-  # SSH access from anywhere
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  # HTTP access from the VPC
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = 32678
+    to_port     = 32678
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 30900
+    to_port     = 30900
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 30950
+    to_port     = 30950
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    self = true
   }
 
   # outbound internet access
@@ -109,21 +102,20 @@ resource "aws_security_group" "default" {
   }
 }
 
-resource "aws_instance" "master" {
+resource "aws_instance" "master-c1" {
   
   tags = {
-    Name = "master-${count.index + 1}"
+    Name = "master-1"
   }
-
-  count = "${var.clusters}"
   
   connection {
     # The default username for our AMI
     user = "ubuntu"
+    private_key = "${file(var.private_key_path)}"
   }
 
   associate_public_ip_address = true
-  private_ip = "10.0.1.${count.index + 1}0"
+  private_ip = "10.0.1.10"
 
   instance_type = "t2.medium"
 
@@ -137,51 +129,119 @@ resource "aws_instance" "master" {
   # Our Security group to allow HTTP and SSH access
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
   subnet_id = "${aws_subnet.default.id}"
+  provisioner "file" {
+    source      = "files/hosts"
+    destination = "~/hosts"
+  }
+
+  provisioner "file" {
+    source      = "files/master.sh"
+    destination = "~/master.sh"
+  }
 
   provisioner "remote-exec" {
     inline = [
-      "sudo apt-get -y update",
-      "sudo apt-get -y install nginx",
-      "sudo service nginx start",
+      "sudo mv ~/hosts /etc/hosts",
+      "sudo hostnamectl set-hostname ${self.tags.Name}"
     ]
+  }
+  provisioner "remote-exec" {
+    script = "~/master.sh"
   }
 }
 
-resource "aws_instance" "worker" {
-  # The connection block tells our provisioner how to
-  # communicate with the resource (instance)
+resource "aws_instance" "worker-c1" {
   connection {
-    # The default username for our AMI
     user = "ubuntu"
-
-    # The connection will use the local SSH agent for authentication.
+    private_key = "${file(var.private_key_path)}"
   }
-
+  count = 3
   instance_type = "t2.medium"
-
-  # Lookup the correct AMI based on the region
-  # we specified
+  tags = {
+    Name = "worker-1-${count.index + 1}"
+  }
+  private_ip = "10.0.1.1${count.index + 1}"
   ami = "${data.aws_ami.default.id}"
-
-  # The name of our SSH keypair we created above.
   key_name = "${var.key_name}"
-
-  # Our Security group to allow HTTP and SSH access
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
-
-  # We're going to launch into the same subnet as our ELB. In a production
-  # environment it's more common to have a separate private subnet for
-  # backend instances.
   subnet_id = "${aws_subnet.default.id}"
-
-  # We run a remote provisioner on the instance after creating it.
-  # In this case, we just install nginx and start it. By default,
-  # this should be on port 80
+  ebs_block_device = {
+    device_name = "/dev/sdd"
+    volume_type = "gp2"
+    volume_size = "30"
+  }
+  provisioner "file" {
+    source      = "files/hosts"
+    destination = "~/hosts"
+  }
+    provisioner "file" {
+    source      = "files/worker.sh"
+    destination = "~/worker.sh"
+  }
   provisioner "remote-exec" {
     inline = [
-      "sudo apt-get -y update",
-      "sudo apt-get -y install nginx",
-      "sudo service nginx start",
+      "sudo mv ~/hosts /etc/hosts",
+      "sudo hostnamectl set-hostname ${self.tags.Name}"
+    ]
+  }
+  provisioner "remote-exec" {
+    script = "~/worker.sh"
+  }
+}
+
+/* resource "aws_instance" "master-c2" {
+  tags = {
+    Name = "master-2"
+  }
+  connection {
+    user = "ubuntu"
+    private_key = "${file(var.private_key_path)}"
+  }
+  associate_public_ip_address = true
+  private_ip = "10.0.1.20"
+  instance_type = "t2.medium"
+  ami = "${data.aws_ami.default.id}"
+  key_name = "${var.key_name}"
+  vpc_security_group_ids = ["${aws_security_group.default.id}"]
+  subnet_id = "${aws_subnet.default.id}"
+  provisioner "file" {
+    source      = "files/hosts"
+    destination = "/etc/hosts"
+  }
+    provisioner "remote-exec" {
+    inline = [
+      "sudo hostnamectl set-hostname ${self.tags.Name}"
     ]
   }
 }
+
+resource "aws_instance" "worker-c2" {
+  connection {
+    user = "ubuntu"
+    private_key = "${file(var.private_key_path)}"
+  }
+  count = 3
+  instance_type = "t2.medium"
+  tags = {
+    Name = "worker-2-${count.index + 1}"
+  }
+  private_ip = "10.0.1.2${count.index + 1}"
+  ami = "${data.aws_ami.default.id}"
+  key_name = "${var.key_name}"
+  vpc_security_group_ids = ["${aws_security_group.default.id}"]
+  subnet_id = "${aws_subnet.default.id}"
+  ebs_block_device = {
+    device_name = "/dev/sdd"
+    volume_type = "gp2"
+    volume_size = "30"
+  }
+  provisioner "file" {
+    source      = "files/hosts"
+    destination = "/etc/hosts"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "sudo hostnamectl set-hostname ${self.tags.Name}"
+    ]
+  }
+} */
