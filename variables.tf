@@ -13,12 +13,12 @@ variable "aws_region" {
   default="eu-west-2"
 }
 
-variable "clusters" {
-  description = "The number of Kubernetes clusters to deploy"
-  default="2"
-}
-
 variable "key_name" {
   description = "Key pair name to use for SSH"
-  default=""
+  default = "jgardiner"
+}
+
+variable "private_key_path" {
+  description = "Path to private SSH key"
+  default = "/Users/joe/.ssh/id_rsa"
 }
