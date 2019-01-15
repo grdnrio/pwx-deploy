@@ -137,24 +137,10 @@ resource "aws_instance" "master" {
   # Our Security group to allow HTTP and SSH access
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
   subnet_id = "${aws_subnet.default.id}"
-/*   provisioner "file" {
-    source      = "files/hosts"
-    destination = "~/hosts"
-  }
-
-  provisioner "file" {
-    source      = "files/master.sh"
-    destination = "~/master.sh"
-  }
-
-  provisioner "remote-exec" {
+ /*  provisioner "remote-exec" {
     inline = [
-      "sudo mv ~/hosts /etc/hosts",
-      "sudo hostnamectl set-hostname ${self.tags.Name}"
+      "sudo echo '${aws_instance.master.*.private_ip} ${aws_instance.master.*.tags.Name}' >> /etc/hosts"
     ]
-  }
-  provisioner "remote-exec" {
-    script = "~/master.sh"
   } */
 }
 
