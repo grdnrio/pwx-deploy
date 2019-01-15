@@ -13,21 +13,27 @@ provider "aws" {
   region = "${var.aws_region}"
 }
 
+variable "clusters" {
+  type = "list"
+  default = ["1", "2"]
+}
+
+variable "workers" {
+  type = "list"
+  default = ["1", "2", "3"]
+}
+
 # Load the latest Ubuntu AMI
 data "aws_ami" "default" {
-  
   most_recent = true
-
     filter {
         name   = "name"
         values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
     }
-
     filter {
         name   = "virtualization-type"
         values = ["hvm"]
     }
-
     owners = ["099720109477"] # Canonical
 }
 
@@ -102,12 +108,14 @@ resource "aws_security_group" "default" {
   }
 }
 
-resource "aws_instance" "master-c1" {
+resource "aws_instance" "master" {
   
   tags = {
-    Name = "master-1"
+    Name = "master-${count.index + 1}"
   }
   
+  count = "${length(var.clusters)}"
+
   connection {
     # The default username for our AMI
     user = "ubuntu"
@@ -115,7 +123,7 @@ resource "aws_instance" "master-c1" {
   }
 
   associate_public_ip_address = true
-  private_ip = "10.0.1.10"
+  private_ip = "10.0.1.${count.index + 1}0"
 
   instance_type = "t2.medium"
 
@@ -129,7 +137,7 @@ resource "aws_instance" "master-c1" {
   # Our Security group to allow HTTP and SSH access
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
   subnet_id = "${aws_subnet.default.id}"
-  provisioner "file" {
+/*   provisioner "file" {
     source      = "files/hosts"
     destination = "~/hosts"
   }
@@ -147,20 +155,20 @@ resource "aws_instance" "master-c1" {
   }
   provisioner "remote-exec" {
     script = "~/master.sh"
-  }
+  } */
 }
 
-resource "aws_instance" "worker-c1" {
+resource "aws_instance" "worker" {
   connection {
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
   }
-  count = 3
+  count = "${length(var.clusters) * length(var.workers)}"
   instance_type = "t2.medium"
   tags = {
-    Name = "worker-1-${count.index + 1}"
+    Name = "worker-${var.clusters[count.index % length(var.clusters)]}-${var.workers[count.index % length(var.workers)]}"
   }
-  private_ip = "10.0.1.1${count.index + 1}"
+  private_ip = "10.0.1.${var.clusters[count.index % length(var.clusters)]}${var.workers[count.index % length(var.workers)]}"
   ami = "${data.aws_ami.default.id}"
   key_name = "${var.key_name}"
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
@@ -170,7 +178,7 @@ resource "aws_instance" "worker-c1" {
     volume_type = "gp2"
     volume_size = "30"
   }
-  provisioner "file" {
+/*   provisioner "file" {
     source      = "files/hosts"
     destination = "~/hosts"
   }
@@ -186,7 +194,7 @@ resource "aws_instance" "worker-c1" {
   }
   provisioner "remote-exec" {
     script = "~/worker.sh"
-  }
+  } */
 }
 
 /* resource "aws_instance" "master-c2" {
