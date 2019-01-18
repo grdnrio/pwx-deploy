@@ -15,12 +15,17 @@ provider "aws" {
 
 variable "clusters" {
   type = "list"
-  default = ["1", "2"]
+  default = ["1"]
 }
 
 variable "workers" {
   type = "list"
-  default = ["1", "2", "3"]
+  default = ["1"]
+}
+
+variable "join_token" {
+  type= "string"
+  default = "abcdef.1234567890abcdef "
 }
 
 # Load the latest Ubuntu AMI
@@ -137,11 +142,41 @@ resource "aws_instance" "master" {
   # Our Security group to allow HTTP and SSH access
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
   subnet_id = "${aws_subnet.default.id}"
- /*  provisioner "remote-exec" {
+   provisioner "remote-exec" {
     inline = [
-      "sudo echo '${aws_instance.master.*.private_ip} ${aws_instance.master.*.tags.Name}' >> /etc/hosts"
+      "sudo hostnamectl set-hostname ${aws_instance.master.tags.Name}",
+      "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
+      "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
+      "sudo apt update -y && sudo apt install -y docker.io kubeadm",
+      "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
+      "sudo kubeadm config images pull",
+      "wait",
+      "sudo kubeadm init --apiserver-advertise-address=${self.private_ip} --pod-network-cidr=10.244.0.0/16",
+      "sudo kubeadm token create ${var.join_token}",
+      "sudo mkdir /root/.kube /home/ubuntu/.kube /tmp/grafanaConfigurations",
+      "sudo cp /etc/kubernetes/admin.conf /root/.kube/config && sudo cp /etc/kubernetes/admin.conf /home/ubuntu/.kube/config",
+      "sudo chown -R ubuntu.ubuntu /home/ubuntu/.kube",
+      "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
+      "kubectl apply -f 'https://install.portworx.com/2.0?kbver=1.13.1&b=true&m=ens5&d=ens5&c=px-demo-${count.index + 1}&stork=true&st=k8s&lh=true'",
+      "kubectl apply -f https://docs.portworx.com/samples/k8s/portworx-pxc-operator.yaml",
+      "sleep 20",
+      "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/2.0.0/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl"
     ]
-  } */
+  }
+}
+
+resource "null_resource" "master" {
+  connection {
+    host = "${element(aws_instance.master.*.public_ip, 0)}"
+    user = "ubuntu"
+    private_key = "${file(var.private_key_path)}"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "sudo echo ${aws_instance.master.*.private_ip} ${aws_instance.master.*.tags.Name} | sudo tee --append /etc/hosts",
+      "sudo echo ${aws_instance.worker.*.private_ip} ${aws_instance.worker.*.tags.Name} | sudo tee --append /etc/hosts"
+    ]
+  }
 }
 
 resource "aws_instance" "worker" {
@@ -164,78 +199,17 @@ resource "aws_instance" "worker" {
     volume_type = "gp2"
     volume_size = "30"
   }
-/*   provisioner "file" {
-    source      = "files/hosts"
-    destination = "~/hosts"
-  }
-    provisioner "file" {
-    source      = "files/worker.sh"
-    destination = "~/worker.sh"
-  }
   provisioner "remote-exec" {
     inline = [
-      "sudo mv ~/hosts /etc/hosts",
-      "sudo hostnamectl set-hostname ${self.tags.Name}"
-    ]
-  }
-  provisioner "remote-exec" {
-    script = "~/worker.sh"
-  } */
-}
-
-/* resource "aws_instance" "master-c2" {
-  tags = {
-    Name = "master-2"
-  }
-  connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-  }
-  associate_public_ip_address = true
-  private_ip = "10.0.1.20"
-  instance_type = "t2.medium"
-  ami = "${data.aws_ami.default.id}"
-  key_name = "${var.key_name}"
-  vpc_security_group_ids = ["${aws_security_group.default.id}"]
-  subnet_id = "${aws_subnet.default.id}"
-  provisioner "file" {
-    source      = "files/hosts"
-    destination = "/etc/hosts"
-  }
-    provisioner "remote-exec" {
-    inline = [
-      "sudo hostnamectl set-hostname ${self.tags.Name}"
+      "sudo hostnamectl set-hostname ${aws_instance.worker.tags.Name}",
+      "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
+      "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
+      "sudo apt update -y && sudo apt install -y docker.io kubeadm",
+      "sudo systemctl restart docker kubelet",
+      "sudo kubeadm config images pull",
+      "sudo docker pull portworx/oci-monitor:2.0.1 ; sudo docker pull openstorage/stork:2.0.1 ; sudo docker pull portworx/px-enterprise:2.0.1",
+      "sleep 120",
+      "sudo kubeadm join 10.0.1.${var.clusters[count.index % length(var.clusters)]}0:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification"
     ]
   }
 }
-
-resource "aws_instance" "worker-c2" {
-  connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-  }
-  count = 3
-  instance_type = "t2.medium"
-  tags = {
-    Name = "worker-2-${count.index + 1}"
-  }
-  private_ip = "10.0.1.2${count.index + 1}"
-  ami = "${data.aws_ami.default.id}"
-  key_name = "${var.key_name}"
-  vpc_security_group_ids = ["${aws_security_group.default.id}"]
-  subnet_id = "${aws_subnet.default.id}"
-  ebs_block_device = {
-    device_name = "/dev/sdd"
-    volume_type = "gp2"
-    volume_size = "30"
-  }
-  provisioner "file" {
-    source      = "files/hosts"
-    destination = "/etc/hosts"
-  }
-  provisioner "remote-exec" {
-    inline = [
-      "sudo hostnamectl set-hostname ${self.tags.Name}"
-    ]
-  }
-} */
