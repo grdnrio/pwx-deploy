@@ -7,18 +7,18 @@
 ## @author Joe Gardiner <joe@grdnr.io>
 ##
 #############################################################
-### Provider
+### Region
 variable "aws_region" {
   description = "The region to deploy the kubernetes clusters"
-  default="eu-west-2"
+  default=""
 }
 
 variable "key_name" {
   description = "Key pair name to use for SSH"
-  default = "jgardiner"
+  default = ""
 }
 
 variable "private_key_path" {
   description = "Path to private SSH key"
-  default = "/Users/joe/.ssh/id_rsa"
+  default = ""
 }
