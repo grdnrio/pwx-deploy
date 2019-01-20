@@ -222,3 +222,6 @@ resource "aws_instance" "worker" {
 output "access" {
   value = ["${join("", aws_instance.master.*.tags.Name)} ${join("\n",aws_instance.master.*.public_ip)}"]
 }
+output "access" {
+  value = ["${join("", aws_instance.worker.*.tags.Name)}: ${join("\n",aws_instance.master.*.public_ip)}"]
+}
