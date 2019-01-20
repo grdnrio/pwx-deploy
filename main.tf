@@ -152,9 +152,14 @@ resource "aws_instance" "master" {
     source      = "files/hosts"
     destination = "/tmp/hosts"
   }
+    provisioner "file" {
+    source      = "${file(var.private_key_path)}"
+    destination = "/home/ubuntu/.ssh/id_rsa"
+  }
    provisioner "remote-exec" {
     inline = [
       "sudo hostnamectl set-hostname ${self.tags.Name}",
+      "sudo chmod 600 /home/ubuntu/.ssh/id_rsa",
       "sudo cat /tmp/hosts | sudo tee --append /etc/hosts",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
@@ -204,9 +209,15 @@ resource "aws_instance" "worker" {
     source      = "files/hosts"
     destination = "/tmp/hosts"
   }
+  provisioner "file" {
+    source      = "${file(var.private_key_path)}"
+    destination = "/home/ubuntu/.ssh/id_rsa"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "sudo hostnamectl set-hostname ${self.tags.Name}",
+      "sudo chmod 600 /home/ubuntu/.ssh/id_rsa",
       "sudo cat /tmp/hosts | sudo tee --append /etc/hosts",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
@@ -219,9 +230,9 @@ resource "aws_instance" "worker" {
     ]
   }
 }
-output "access" {
+output "masters" {
   value = ["${join("", aws_instance.master.*.tags.Name)} ${join("\n",aws_instance.master.*.public_ip)}"]
 }
-output "access" {
-  value = ["${join("", aws_instance.worker.*.tags.Name)}: ${join("\n",aws_instance.master.*.public_ip)}"]
+output "workers" {
+  value = ["${join("", aws_instance.worker.*.tags.Name)}: ${join("\n",aws_instance.worker.*.public_ip)}"]
 }
