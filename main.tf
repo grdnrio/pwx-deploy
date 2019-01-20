@@ -152,8 +152,8 @@ resource "aws_instance" "master" {
     source      = "files/hosts"
     destination = "/tmp/hosts"
   }
-    provisioner "file" {
-    source      = "${file(var.private_key_path)}"
+  provisioner "file" {
+    source      = "${var.private_key_path}"
     destination = "/home/ubuntu/.ssh/id_rsa"
   }
    provisioner "remote-exec" {
@@ -184,7 +184,7 @@ resource "aws_instance" "master" {
 resource "aws_instance" "worker" {
   connection {
     user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
+    private_key = "${var.private_key_path}"
   }
   count = "${length(var.clusters) * length(var.workers)}"
   instance_type = "t2.medium"
