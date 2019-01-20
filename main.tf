@@ -178,12 +178,33 @@ resource "aws_instance" "master" {
       "kubectl apply -f 'https://install.portworx.com/2.0?kbver=1.13.1&b=true&m=eth0&d=eth0&c=px-demo-${count.index + 1}&stork=true&st=k8s&lh=true'",
       "kubectl apply -f https://docs.portworx.com/samples/k8s/portworx-pxc-operator.yaml",
       "sleep 20",
-      "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/2.0.0/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
-      "token=$(ssh worker-2-1 pxctl cluster token show | cut -f 3 -d ' ')",
-      "echo $token | grep -Eq '.{128}'",
-      "storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\\    ip: worker-2-1\\n    token: '$token >/root/cp.yaml",
-      "cat /root/cp.yaml | ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no master-1 kubectl apply -f -"
+      "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/2.0.0/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl"
     ]
+  }
+}
+
+resource "null_resource" "storkctl" {
+
+  connection {
+    # The default username for our AMI
+    user = "ubuntu"
+    private_key = "${file(var.private_key_path)}"
+    host = "${aws_instance.master.0.public_ip}"
+  }
+  triggers {
+        build_number = "${timestamp()}"
+  }
+
+  depends_on = ["aws_instance.worker", "aws_instance.master"]
+
+  provisioner "remote-exec" {
+    inline = [
+      "sleep 120",
+      "token=$(ssh -oStrictHostKeyChecking=no worker-2-1 pxctl cluster token show | cut -f 3 -d ' ')",
+      "echo $token | grep -Eq '.{128}'",
+      "storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\\    ip: worker-2-1\\n    token: '$token >/home/ubuntu/cp.yaml",
+      "kubectl apply -f /home/ubuntu/cp.yaml"
+    ] 
   }
 }
 
