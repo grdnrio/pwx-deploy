@@ -214,7 +214,7 @@ resource "aws_instance" "worker" {
       "sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
       "sudo docker pull portworx/oci-monitor:2.0.1 ; sudo docker pull openstorage/stork:2.0.1 ; sudo docker pull portworx/px-enterprise:2.0.1",
-      "sleep 120",
+      "sleep 30",
       "sudo kubeadm join 10.0.1.${var.clusters[count.index % length(var.clusters)]}0:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification --node-name ${self.tags.Name}"
     ]
   }
