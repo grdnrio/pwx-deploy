@@ -25,7 +25,7 @@ variable "workers" {
 
 variable "join_token" {
   type= "string"
-  default = "abcdef.1234567890abcdef "
+  default = "abcdef.1234567890abcdef"
 }
 
 # Load the latest Ubuntu AMI
@@ -161,6 +161,7 @@ resource "aws_instance" "master" {
       "sudo hostnamectl set-hostname ${self.tags.Name}",
       "sudo chmod 600 /home/ubuntu/.ssh/id_rsa",
       "sudo cat /tmp/hosts | sudo tee --append /etc/hosts",
+      "git clone https://github.com/grdnrio/sa-toolkit.git",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
       "sudo apt update -y",
