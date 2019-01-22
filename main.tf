@@ -190,7 +190,7 @@ resource "null_resource" "storkctl" {
     # The default username for our AMI
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master.0.public_ip}"
+    host = "${aws_instance.master.1.public_ip}"
   }
   triggers {
         build_number = "${timestamp()}"
@@ -204,7 +204,7 @@ resource "null_resource" "storkctl" {
       "token=$(ssh -oStrictHostKeyChecking=no worker-2-1 pxctl cluster token show | cut -f 3 -d ' ')",
       "echo $token | grep -Eq '.{128}'",
       "storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\\    ip: worker-2-1\\n    token: '$token >/home/ubuntu/cp.yaml",
-      "kubectl apply -f /home/ubuntu/cp.yaml"
+      "cat /home/ubuntu/cp.yaml | ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no master-1 kubectl apply -f -"
     ] 
   }
 }
