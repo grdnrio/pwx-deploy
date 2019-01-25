@@ -200,7 +200,7 @@ resource "null_resource" "storkctl" {
 
   provisioner "remote-exec" {
     inline = [
-      "sleep 120",
+      "sleep 180",
       "token=$(ssh -oStrictHostKeyChecking=no worker-2-1 pxctl cluster token show | cut -f 3 -d ' ')",
       "echo $token | grep -Eq '.{128}'",
       "storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\\    ip: worker-2-1\\n    token: '$token >/home/ubuntu/cp.yaml",
@@ -214,6 +214,7 @@ resource "aws_instance" "worker" {
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
   }
+  depends_on = ["aws_instance.master"]
   count = "${length(var.clusters) * length(var.workers)}"
   instance_type = "t2.medium"
   tags = {
