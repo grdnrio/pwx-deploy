@@ -261,3 +261,19 @@ resource "aws_instance" "worker" {
     ]
   }
 }
+
+resource "null_resource" "local-setup" {
+  triggers {
+        build_number = "${timestamp()}"
+  }
+  
+  depends_on = ["null_resource.storkctl"]  
+  
+  provisioner "local-exec" {
+    inline = [
+      "open http://${aws_instance.master.0.public_ip}:32678",
+      "open http://${aws_instance.master.0.public_ip}:30900",
+      "ssh ubuntu@${aws_instance.master.0.public_ip}"
+    ]
+  }
+}
