@@ -164,9 +164,8 @@ resource "aws_instance" "master" {
       "git clone https://github.com/grdnrio/sa-toolkit.git",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      "sudo apt-get remove docker docker-engine",
-      "sudo apt-get update -y",
-      "sudo apt-get install -y docker.io kubeadm",
+      "until docker; do sudo apt-get update && sudo apt-get install -y docker.io; sleep 2; done",
+      "sudo apt-get install -y kubeadm",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
       "wait",
@@ -178,7 +177,6 @@ resource "aws_instance" "master" {
       "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
       "kubectl apply -f 'https://install.portworx.com/2.0?kbver=1.13.1&b=true&m=eth0&d=eth0&c=px-demo-${count.index + 1}&stork=true&st=k8s&lh=true'",
       "kubectl apply -f https://docs.portworx.com/samples/k8s/portworx-pxc-operator.yaml",
-      "sleep 20",
       "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/2.0.0/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl"
     ]
   }
@@ -250,13 +248,12 @@ resource "aws_instance" "worker" {
       "sudo cat /tmp/hosts | sudo tee --append /etc/hosts",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      "sudo apt-get update -y",
-      "sudo apt-get remove docker docker-engine",
-      "sudo apt-get install -y docker.io kubeadm",
+      "until docker; do sudo apt-get update && sudo apt-get install -y docker.io; sleep 2; done",
+      "wait",
+      "sudo apt-get install -y kubeadm",
       "sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
       "sudo docker pull portworx/oci-monitor:2.0.1 ; sudo docker pull openstorage/stork:2.0.1 ; sudo docker pull portworx/px-enterprise:2.0.1",
-      "sleep 30",
       "sudo kubeadm join 10.0.1.${var.clusters[count.index % length(var.clusters)]}0:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification --node-name ${self.tags.Name}"
     ]
   }
