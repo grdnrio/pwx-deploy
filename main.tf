@@ -15,7 +15,7 @@ provider "aws" {
 
 variable "clusters" {
   type = "list"
-  default = ["1", "2"]
+  default = ["1"]
 }
 
 variable "workers" {
@@ -33,7 +33,7 @@ data "aws_ami" "default" {
   most_recent = true
     filter {
         name   = "name"
-        values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+        values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
     }
     filter {
         name   = "virtualization-type"
@@ -164,9 +164,9 @@ resource "aws_instance" "master" {
       "git clone https://github.com/grdnrio/sa-toolkit.git",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      "sudo apt update -y",
-      "sleep 10",
-      "sudo apt install -y docker.io kubeadm",
+      "sudo apt-get remove docker docker-engine",
+      "sudo apt-get update -y",
+      "sudo apt-get install -y docker.io kubeadm",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
       "wait",
@@ -250,9 +250,9 @@ resource "aws_instance" "worker" {
       "sudo cat /tmp/hosts | sudo tee --append /etc/hosts",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      "sudo apt update -y",
-      "sleep 10",
-      "sudo apt install -y docker.io kubeadm",
+      "sudo apt-get update -y",
+      "sudo apt-get remove docker docker-engine",
+      "sudo apt-get install -y docker.io kubeadm",
       "sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
       "sudo docker pull portworx/oci-monitor:2.0.1 ; sudo docker pull openstorage/stork:2.0.1 ; sudo docker pull portworx/px-enterprise:2.0.1",
@@ -266,14 +266,10 @@ resource "null_resource" "local-setup" {
   triggers {
         build_number = "${timestamp()}"
   }
-  
+
   depends_on = ["null_resource.storkctl"]  
   
   provisioner "local-exec" {
-    inline = [
-      "open http://${aws_instance.master.0.public_ip}:32678",
-      "open http://${aws_instance.master.0.public_ip}:30900",
-      "ssh ubuntu@${aws_instance.master.0.public_ip}"
-    ]
+    command = "open http://${aws_instance.master.0.public_ip}:32678 && open http://${aws_instance.master.0.public_ip}:30900 && ssh ubuntu@${aws_instance.master.0.public_ip}"
   }
 }
