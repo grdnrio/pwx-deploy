@@ -15,7 +15,7 @@ provider "aws" {
 
 variable "clusters" {
   type = "list"
-  default = ["1"]
+  default = ["1", "2"]
 }
 
 variable "workers" {
@@ -289,15 +289,3 @@ resource "null_resource" "prometheus" {
   }
 }
 
-
-resource "null_resource" "local-setup" {
-  triggers {
-        build_number = "${timestamp()}"
-  }
-
-  depends_on = ["null_resource.storkctl"]  
-  
-  provisioner "local-exec" {
-    command = "open http://${aws_instance.master.0.public_ip}:32678 && open http://${aws_instance.master.0.public_ip}:30900 && ssh ubuntu@${aws_instance.master.0.public_ip}"
-  }
-}
