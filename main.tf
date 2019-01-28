@@ -80,20 +80,8 @@ resource "aws_security_group" "default" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
-    from_port   = 32678
-    to_port     = 32678
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 30900
-    to_port     = 30900
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 30950
-    to_port     = 30950
+    from_port   = 30000
+    to_port     = 35000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -149,8 +137,8 @@ resource "aws_instance" "master" {
   }
 
   provisioner "file" {
-    source      = "files/hosts"
-    destination = "/tmp/hosts"
+    source      = "files/"
+    destination = "/tmp"
   }
   provisioner "file" {
     source      = "${var.private_key_path}"
@@ -176,8 +164,23 @@ resource "aws_instance" "master" {
       "sudo chown -R ubuntu.ubuntu /home/ubuntu/.kube",
       "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
       "kubectl apply -f 'https://install.portworx.com/2.0?kbver=1.13.1&b=true&m=eth0&d=eth0&c=px-demo-${count.index + 1}&stork=true&st=k8s&lh=true'",
-      "kubectl apply -f https://docs.portworx.com/samples/k8s/portworx-pxc-operator.yaml",
-      "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/2.0.0/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl"
+      
+      # Helm installation
+      "sudo snap install helm --classic",
+      "kubectl apply -f /tmp/tiller-rbac.yaml",
+      ". ~/.profile",
+      "sudo helm init --service-account tiller",
+
+      # Grafana installation
+ /*      "sudo mkdir -p /var/lib/grafana/dashboards",
+      "sudo curl -o /var/lib/grafana/dashboards/cluster.json -s https://docs.portworx.com/install-with-other/operate-and-maintain/monitoring/grafana/Cluster_Template.json",
+      "curl -o /tmp/dashboardConfig.yaml -s https://raw.githubusercontent.com/portworx/px-docs/gh-pages/k8s-samples/grafana/config/dashboardConfig.yaml",
+      "kubectl create configmap grafana-config --from-file=/tmp -n kube-system",
+      "kubectl apply -f /tmp/grafana-deployment.yaml", */
+      
+      # Stork binary installation
+      "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/2.0.0/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
+
     ]
   }
 }
@@ -251,13 +254,41 @@ resource "aws_instance" "worker" {
       "until docker; do sudo apt-get update && sudo apt-get install -y docker.io; sleep 2; done",
       "wait",
       "sudo apt-get install -y kubeadm",
-      "sudo systemctl restart docker kubelet",
+      "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
       "sudo docker pull portworx/oci-monitor:2.0.1 ; sudo docker pull openstorage/stork:2.0.1 ; sudo docker pull portworx/px-enterprise:2.0.1",
       "sudo kubeadm join 10.0.1.${var.clusters[count.index % length(var.clusters)]}0:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification --node-name ${self.tags.Name}"
     ]
   }
 }
+
+resource "null_resource" "prometheus" {
+
+  connection {
+    # The default username for our AMI
+    user = "ubuntu"
+    private_key = "${file(var.private_key_path)}"
+    host = "${aws_instance.master.*.public_ip}"
+  }
+  triggers {
+        build_number = "${timestamp()}"
+  }
+
+  depends_on = ["aws_instance.worker"]
+
+  provisioner "remote-exec" {
+    inline = [
+      "kubectl apply -f /tmp/prometheus-operator.yaml",
+      "kubectl create secret generic alertmanager-portworx --from-file=/tmp/alertmanager.yaml -n kube-system",
+      "while : ; do kubectl apply -f /tmp/service-monitor.yaml; [ $? -eq 0 ] && break; done",
+      "kubectl apply -f /tmp/alertmanager-cluster.yaml",
+      "kubectl apply -f /tmp/alertmanager-service.yaml",
+      "kubectl apply -f /tmp/prometheus-rules.yaml",
+      "kubectl apply -f /tmp/prometheus-cluster.yaml"
+    ] 
+  }
+}
+
 
 resource "null_resource" "local-setup" {
   triggers {
