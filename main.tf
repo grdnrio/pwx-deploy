@@ -262,7 +262,7 @@ resource "aws_instance" "worker" {
   }
 }
 
-resource "null_resource" "prometheus" {
+/* resource "null_resource" "prometheus" {
 
   connection {
     # The default username for our AMI
@@ -287,5 +287,5 @@ resource "null_resource" "prometheus" {
       "kubectl apply -f /tmp/prometheus-cluster.yaml"
     ] 
   }
-}
+} */
 
