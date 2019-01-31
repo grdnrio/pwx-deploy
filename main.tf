@@ -268,7 +268,7 @@ resource "null_resource" "prometheus" {
     # The default username for our AMI
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master.*.public_ip}"
+    host = "${aws_instance.master.0.public_ip}"
   }
   triggers {
         build_number = "${timestamp()}"
