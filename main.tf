@@ -170,13 +170,6 @@ resource "aws_instance" "master" {
       "kubectl apply -f /tmp/tiller-rbac.yaml",
       ". ~/.profile",
       "sudo helm init --service-account tiller",
-
-      # Grafana installation
- /*      "sudo mkdir -p /var/lib/grafana/dashboards",
-      "sudo curl -o /var/lib/grafana/dashboards/cluster.json -s https://docs.portworx.com/install-with-other/operate-and-maintain/monitoring/grafana/Cluster_Template.json",
-      "curl -o /tmp/dashboardConfig.yaml -s https://raw.githubusercontent.com/portworx/px-docs/gh-pages/k8s-samples/grafana/config/dashboardConfig.yaml",
-      "kubectl create configmap grafana-config --from-file=/tmp -n kube-system",
-      "kubectl apply -f /tmp/grafana-deployment.yaml", */
       
       # Stork binary installation
       "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/2.0.0/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
@@ -262,7 +255,7 @@ resource "aws_instance" "worker" {
   }
 }
 
-/* resource "null_resource" "prometheus" {
+resource "null_resource" "monitoring" {
 
   connection {
     # The default username for our AMI
@@ -278,14 +271,8 @@ resource "aws_instance" "worker" {
 
   provisioner "remote-exec" {
     inline = [
-      "kubectl apply -f /tmp/prometheus-operator.yaml",
-      "kubectl create secret generic alertmanager-portworx --from-file=/tmp/alertmanager.yaml -n kube-system",
-      "while : ; do kubectl apply -f /tmp/service-monitor.yaml; [ $? -eq 0 ] && break; done",
-      "kubectl apply -f /tmp/alertmanager-cluster.yaml",
-      "kubectl apply -f /tmp/alertmanager-service.yaml",
-      "kubectl apply -f /tmp/prometheus-rules.yaml",
-      "kubectl apply -f /tmp/prometheus-cluster.yaml"
+      "kubectl apply --filename https://raw.githubusercontent.com/satchpx/kubernetes-prometheus/master/manifests-all.yaml"
     ] 
   }
-} */
+}
 
