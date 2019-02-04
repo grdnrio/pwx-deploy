@@ -2,9 +2,9 @@
 This is a Terraform script to deploy two Kubernetes clusters, each with a running Portworx cluster on AWS. It pre-configures the following:
 
 - Portworx latest version
-- Prometheus in both clusters (TO DO)
-- Lighthouse in both clusters
-- Grafana with dashboards in both clusters (TO DO)
+- Prometheus
+- Lighthouse
+- Grafana with dashboard
 - Storkctl configured with cluster 1 as the source and cluster 2 as the destination
 
 You need to have Terraform installed and your AWS credentials set in `~/.aws/credentials`
@@ -42,7 +42,3 @@ Note that the existing keypair name is a stored SSH keypair on AWS. Make sure it
 - kube config is set on the masters, no sudo required
 - storkctl is setup on the masters
 - there's a repo of manifests pulled onto each master
-
-## Issues
-- sometimes one of the workers fails to find the `docker.io` package. Just destroy and redeploy.
-- if a node fails to reach the K8s API server during provisioning it's simply that the master took longer than usual to come up. Just redeploy!
