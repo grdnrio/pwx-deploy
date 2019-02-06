@@ -1,11 +1,11 @@
 # pwx-tf-deploy
-This is a Terraform script to deploy two Kubernetes clusters, each with a running Portworx cluster on AWS. It pre-configures the following:
+This is a Terraform script to one or more Kubernetes clussters, each with a running Portworx cluster on AWS. It pre-configures the following:
 
 - Portworx latest version
 - Prometheus
 - Lighthouse
 - Grafana with dashboard
-- Storkctl configured with cluster 1 as the source and cluster 2 as the destination
+- Storkctl configured with cluster 1 as the source and cluster 2 as the destination (if multiple cluster)
 
 You need to have Terraform installed and your AWS credentials set in `~/.aws/credentials`
 
@@ -25,6 +25,9 @@ key_name = "jgardiner"
 
 ### Private ssh key for keypair path
 private_key_path = "/Users/joe/.ssh/id_rsa"
+
+### Number of clusters
+clusters = ["1"]
 ```
 Note that the existing keypair name is a stored SSH keypair on AWS. Make sure it exists in your chosen region.
 
