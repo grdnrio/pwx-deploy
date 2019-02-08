@@ -195,10 +195,10 @@ resource "null_resource" "storkctl" {
   provisioner "remote-exec" {
     inline = [
       "sleep 180",
-      "token=$(ssh -oStrictHostKeyChecking=no worker-2-1 pxctl cluster token show | cut -f 3 -d ' ')",
+      "token=$(ssh -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d ' ')",
       "echo $token | grep -Eq '.{128}'",
-      "storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\\    ip: worker-2-1\\n    token: '$token >/home/ubuntu/cp.yaml",
-      "cat /home/ubuntu/cp.yaml | ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no master-1 kubectl apply -f -"
+      "storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\\    ip: worker-c2-1\\n    token: '$token >/home/ubuntu/cp.yaml",
+      "cat /home/ubuntu/cp.yaml | ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no master-c1 kubectl apply -f -"
     ] 
   }
 }
