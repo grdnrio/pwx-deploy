@@ -104,7 +104,7 @@ resource "aws_security_group" "default" {
 resource "aws_instance" "master" {
   
   tags = {
-    Name = "master-${count.index + 1}"
+    Name = "master-c${count.index + 1}"
   }
   
   count = "${length(var.clusters)}"
@@ -212,7 +212,7 @@ resource "aws_instance" "worker" {
   count = "${length(var.clusters) * length(var.workers)}"
   instance_type = "t2.medium"
   tags = {
-    Name = "worker-${var.clusters[count.index % length(var.clusters)]}-${var.workers[count.index % length(var.workers)]}"
+    Name = "worker-c${var.clusters[count.index % length(var.clusters)]}-${var.workers[count.index % length(var.workers)]}"
   }
   private_ip = "10.0.1.${var.clusters[count.index % length(var.clusters)]}${var.workers[count.index % length(var.workers)]}"
   ami = "${data.aws_ami.default.id}"
