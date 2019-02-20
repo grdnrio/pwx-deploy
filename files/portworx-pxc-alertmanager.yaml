@@ -1,0 +1,19 @@
+global:
+  # The smarthost and SMTP sender used for mail notifications.
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'dummy@dummy.com'
+  smtp_auth_username: "dummy@dummy.com"
+  smtp_auth_password: 'dummy'
+route:
+  group_by: [Alertname]
+  # Send all notifications to me.
+  receiver: email-me
+receivers:
+- name: email-me
+  email_configs:
+  - to: dummy@dummy.com
+    from: dummy@dummy.com
+    smarthost: smtp.gmail.com:587
+    auth_username: "dummy@dummy.com"
+    auth_identity: "dummy@dummy.com"
+    auth_password: "dummy"
