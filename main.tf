@@ -20,7 +20,7 @@ variable "clusters" {
 
 variable "workers" {
   type = "list"
-  default = ["1", "2", "3"]
+  default = ["1", "2", "3", "4", "5"]
 }
 
 variable "join_token" {
@@ -152,7 +152,16 @@ resource "aws_instance" "master" {
       "git clone https://github.com/grdnrio/sa-toolkit.git",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      "until docker; do sudo apt-get update && sudo apt-get install -y docker.io; sleep 2; done",
+      
+      # Install Docker
+      "sudo apt-get remove docker docker-engine docker.io containerd runc",
+      "sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common",
+      "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
+      "sleep 10",
+      "until find /etc/apt/ -name *.list | xargs cat | grep  ^[[:space:]]*deb | grep docker; do sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"; sleep 2; done",
+      "wait",
+      "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce=18.06.2~ce~3-0~ubuntu containerd.io; sleep 2; done",
+
       "sudo apt-get install -y kubeadm",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
@@ -163,7 +172,9 @@ resource "aws_instance" "master" {
       "sudo cp /etc/kubernetes/admin.conf /root/.kube/config && sudo cp /etc/kubernetes/admin.conf /home/ubuntu/.kube/config",
       "sudo chown -R ubuntu.ubuntu /home/ubuntu/.kube",
       "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
-      "kubectl apply -f 'https://install.portworx.com/2.0?kbver=1.13.1&b=true&m=eth0&d=eth0&c=px-demo-${count.index + 1}&stork=true&st=k8s&lh=true'",
+      "kubectl apply -f https://docs.portworx.com/samples/k8s/portworx-pxc-operator.yaml",
+      "kubectl create secret generic alertmanager-portworx --from-file=/tmp/portworx-pxc-alertmanager.yaml -n kube-system",
+      "kubectl apply -f 'https://install.portworx.com/2.0.2?mc=false&kbver=1.13.3&b=true&m=eth0&d=eth0&c=px-demo-${count.index + 1}&stork=true&lh=true&mon=true&st=k8s'",
       
       # Helm installation
       "sudo snap install helm --classic",
@@ -210,7 +221,7 @@ resource "aws_instance" "worker" {
   }
   depends_on = ["aws_instance.master"]
   count = "${length(var.clusters) * length(var.workers)}"
-  instance_type = "t2.medium"
+  instance_type = "t2.large"
   tags = {
     Name = "worker-c${var.clusters[count.index % length(var.clusters)]}-${var.workers[count.index % length(var.workers)]}"
   }
@@ -244,7 +255,16 @@ resource "aws_instance" "worker" {
       "sudo cat /tmp/hosts | sudo tee --append /etc/hosts",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      "until docker; do sudo apt-get update && sudo apt-get install -y docker.io; sleep 2; done",
+      
+      # Install Docker
+      "sudo apt-get remove docker docker-engine docker.io containerd runc",
+      "sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common",
+      "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
+      "sleep 10",
+      "until find /etc/apt/ -name *.list | xargs cat | grep  ^[[:space:]]*deb | grep docker; do sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"; sleep 2; done",
+      "wait",
+      "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce=18.06.2~ce~3-0~ubuntu containerd.io; sleep 2; done",
+
       "wait",
       "sudo apt-get install -y kubeadm",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
@@ -255,7 +275,7 @@ resource "aws_instance" "worker" {
   }
 }
 
-resource "null_resource" "monitoring" {
+/* resource "null_resource" "monitoring" {
 
   connection {
     # The default username for our AMI
@@ -271,8 +291,8 @@ resource "null_resource" "monitoring" {
 
   provisioner "remote-exec" {
     inline = [
-      "kubectl apply --filename https://raw.githubusercontent.com/satchpx/kubernetes-prometheus/master/manifests-all.yaml"
+      "kubectl apply --filename https://raw.githubusercontent.com/grdnrio/kubernetes-prometheus/master/manifests-all.yaml"
     ] 
   }
-}
+} */
 
