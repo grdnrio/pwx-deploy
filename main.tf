@@ -160,7 +160,7 @@ resource "aws_instance" "master" {
       "sleep 10",
       "until find /etc/apt/ -name *.list | xargs cat | grep  ^[[:space:]]*deb | grep docker; do sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"; sleep 2; done",
       "wait",
-      "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce=18.06.2~ce~3-0~ubuntu containerd.io; sleep 2; done",
+      "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
 
       "sudo apt-get install -y kubeadm",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
@@ -263,7 +263,7 @@ resource "aws_instance" "worker" {
       "sleep 10",
       "until find /etc/apt/ -name *.list | xargs cat | grep  ^[[:space:]]*deb | grep docker; do sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"; sleep 2; done",
       "wait",
-      "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce=18.06.2~ce~3-0~ubuntu containerd.io; sleep 2; done",
+      "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
 
       "wait",
       "sudo apt-get install -y kubeadm",
