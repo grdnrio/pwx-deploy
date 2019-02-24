@@ -174,7 +174,7 @@ resource "aws_instance" "master" {
       "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
       "kubectl apply -f https://docs.portworx.com/samples/k8s/portworx-pxc-operator.yaml",
       "kubectl create secret generic alertmanager-portworx --from-file=/tmp/portworx-pxc-alertmanager.yaml -n kube-system",
-      "kubectl apply -f 'https://install.portworx.com/2.0.2?mc=false&kbver=1.13.3&b=true&m=eth0&d=eth0&c=px-demo-${count.index + 1}&stork=true&lh=true&mon=true&st=k8s'",
+      "kubectl apply -f 'https://install.portworx.com/2.0.2?mc=false&kbver=1.13.3&b=true&c=px-demo-${count.index + 1}&stork=true&lh=true&mon=true&st=k8s'",
       
       # Helm installation
       "sudo snap install helm --classic",
