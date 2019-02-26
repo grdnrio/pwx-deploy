@@ -198,7 +198,7 @@ resource "null_resource" "storkctl" {
     host = "${aws_instance.master.1.public_ip}"
   }
   triggers {
-        build_number = "${timestamp()}"
+        multi_master = "${ aws_instance.master.count > 1 }"
   }
 
   depends_on = ["aws_instance.worker", "aws_instance.master"]
