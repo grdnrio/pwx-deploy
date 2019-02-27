@@ -205,14 +205,14 @@ resource "null_resource" "storkctl" {
   provisioner "remote-exec" {
     inline = [
 <<EOF
-sleep 180
 if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
+  sleep 180
   token=$(ssh -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d ' ')
   echo $token | grep -Eq '.{128}'
-  storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\\    ip: worker-c2-1\\n    token: '$token >/home/ubuntu/cp.yaml
-  cat /home/ubuntu/cp.yaml | ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no master-c1 kubectl apply -f -
+  storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\    ip: worker-c2-1\n    token: '$token >/home/ubuntu/cp.yaml
+  kubectl apply -f /home/ubuntu/cp.yaml
 else
-  echo "single cluster deployment"
+  echo "Nothing to do. Single cluster deployment"
 fi
 EOF
     ] 
@@ -278,4 +278,16 @@ resource "aws_instance" "worker" {
       "sudo kubeadm join 10.0.1.${var.clusters[count.index % length(var.clusters)]}0:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification --node-name ${self.tags.Name}"
     ]
   }
+}
+
+output "master1_access" {
+    value = ["ssh ubuntu@${aws_instance.master.0.public_ip}"]
+}
+
+output "lighthouse_url" {
+    value = ["http://${aws_instance.worker.0.public_ip}:32678"]
+}
+
+output "grafana_url" {
+    value = ["http://${aws_instance.worker.0.public_ip}:32678"]
 }
