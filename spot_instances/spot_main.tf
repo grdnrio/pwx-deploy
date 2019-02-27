@@ -15,7 +15,7 @@ provider "aws" {
 
 variable "workers" {
   type = "string"
-  default = 5
+  default = "5"
 }
 
 variable "join_token" {
