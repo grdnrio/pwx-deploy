@@ -226,7 +226,7 @@ resource "aws_instance" "worker" {
   }
   depends_on = ["aws_instance.master"]
   count = "${length(var.clusters) * length(var.workers)}"
-  instance_type = "t2.large"
+  instance_type = "t2.medium"
   tags = {
     Name = "worker-c${var.clusters[count.index % length(var.clusters)]}-${var.workers[count.index % length(var.workers)]}"
   }
