@@ -192,24 +192,29 @@ resource "aws_instance" "master" {
 resource "null_resource" "storkctl" {
 
   connection {
-    # The default username for our AMI
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master.1.public_ip}"
+    host = "${aws_instance.master.0.public_ip}"
   }
   triggers {
-        multi_master = "${ aws_instance.master.count > 1 }"
+    multi_master = "${ length(var.clusters) > 1 }"
   }
 
   depends_on = ["aws_instance.worker", "aws_instance.master"]
 
   provisioner "remote-exec" {
     inline = [
-      "sleep 180",
-      "token=$(ssh -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d ' ')",
-      "echo $token | grep -Eq '.{128}'",
-      "storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\\    ip: worker-c2-1\\n    token: '$token >/home/ubuntu/cp.yaml",
-      "cat /home/ubuntu/cp.yaml | ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no master-c1 kubectl apply -f -"
+<<EOF
+sleep 180
+if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
+  token=$(ssh -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d ' ')
+  echo $token | grep -Eq '.{128}'
+  storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\\    ip: worker-c2-1\\n    token: '$token >/home/ubuntu/cp.yaml
+  cat /home/ubuntu/cp.yaml | ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no master-c1 kubectl apply -f -
+else
+  echo "single cluster deployment"
+fi
+EOF
     ] 
   }
 }
@@ -274,25 +279,3 @@ resource "aws_instance" "worker" {
     ]
   }
 }
-
-/* resource "null_resource" "monitoring" {
-
-  connection {
-    # The default username for our AMI
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master.0.public_ip}"
-  }
-  triggers {
-        build_number = "${timestamp()}"
-  }
-
-  depends_on = ["aws_instance.worker"]
-
-  provisioner "remote-exec" {
-    inline = [
-      "kubectl apply --filename https://raw.githubusercontent.com/grdnrio/kubernetes-prometheus/master/manifests-all.yaml"
-    ] 
-  }
-} */
-
