@@ -206,7 +206,7 @@ resource "null_resource" "storkctl" {
     inline = [
 <<EOF
 if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
-  sleep 180
+  sleep 120
   token=$(ssh -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d ' ')
   echo $token | grep -Eq '.{128}'
   storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\    ip: worker-c2-1\n    token: '$token >/home/ubuntu/cp.yaml
@@ -289,5 +289,5 @@ output "lighthouse_url" {
 }
 
 output "grafana_url" {
-    value = ["http://${aws_instance.worker.0.public_ip}:32678"]
+    value = ["http://${aws_instance.worker.0.public_ip}:30950"]
 }
