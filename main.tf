@@ -175,6 +175,7 @@ resource "aws_instance" "master" {
       "kubectl apply -f https://docs.portworx.com/samples/k8s/portworx-pxc-operator.yaml",
       "kubectl create secret generic alertmanager-portworx --from-file=/tmp/portworx-pxc-alertmanager.yaml -n kube-system",
       "kubectl apply -f 'https://install.portworx.com/2.0.2?mc=false&kbver=1.13.3&b=true&c=px-demo-${count.index + 1}&stork=true&lh=true&mon=true&st=k8s'",
+      "kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml",
       
       # Helm installation
       "sudo snap install helm --classic",
