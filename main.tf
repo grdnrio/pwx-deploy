@@ -190,36 +190,6 @@ resource "aws_instance" "master" {
   }
 }
 
-resource "null_resource" "storkctl" {
-
-  connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master.0.public_ip}"
-  }
-  triggers {
-    multi_master = "${ length(var.clusters) > 1 }"
-  }
-
-  depends_on = ["aws_instance.worker", "aws_instance.master"]
-
-  provisioner "remote-exec" {
-    inline = [
-<<EOF
-if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
-  sleep 120
-  token=$(ssh -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d ' ')
-  echo $token | grep -Eq '.{128}'
-  storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\    ip: worker-c2-1\n    token: '$token >/home/ubuntu/cp.yaml
-  kubectl apply -f /home/ubuntu/cp.yaml
-else
-  echo "Nothing to do. Single cluster deployment"
-fi
-EOF
-    ] 
-  }
-}
-
 resource "aws_instance" "worker" {
   connection {
     user = "ubuntu"
@@ -278,6 +248,39 @@ resource "aws_instance" "worker" {
       "sudo docker pull portworx/oci-monitor:2.0.1 ; sudo docker pull openstorage/stork:2.0.1 ; sudo docker pull portworx/px-enterprise:2.0.1",
       "sudo kubeadm join 10.0.1.${var.clusters[count.index % length(var.clusters)]}0:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification --node-name ${self.tags.Name}"
     ]
+  }
+}
+
+resource "null_resource" "storkctl" {
+
+  connection {
+    user = "ubuntu"
+    private_key = "${file(var.private_key_path)}"
+    host = "${aws_instance.master.0.public_ip}"
+  }
+  triggers {
+    multi_master = "${ length(var.clusters) > 1 }"
+  }
+
+  depends_on = ["aws_instance.worker", "aws_instance.master"]
+
+  provisioner "remote-exec" {
+    inline = [
+<<EOF
+if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
+  while : ; do
+    token=$(ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d " ")
+    echo $token | grep -Eq '.{128}'
+    [ $? -eq 0 ] && break
+    sleep 5
+  done
+  ssh -oStrictHostKeyChecking=no master-c2 storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\    ip: worker-c2-1\n    token: '$token >/home/ubuntu/cp.yaml
+  kubectl apply -f /home/ubuntu/cp.yaml
+else
+  echo "Nothing to do. Single cluster deployment"
+fi
+EOF
+    ] 
   }
 }
 
