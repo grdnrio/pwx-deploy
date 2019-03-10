@@ -1,0 +1,25 @@
+---
+- hosts: nodes
+  gather_facts: no
+  pre_tasks:
+    - name: 'install python2'
+      raw: sudo yum install -y python
+  tasks:
+  - name: install the latest version of Docker
+    yum:
+      name: docker
+      state: latest
+  - name: install NetworkManager
+    yum:
+      name: NetworkManager
+  - name: enable network-manager
+    shell: sudo systemctl enable NetworkManager && sudo systemctl start NetworkManager
+  - name: enable docker
+    shell: sudo systemctl enable docker && sudo systemctl start docker
+    retries: 3
+  - name: Add repository
+    yum_repository:
+       name: okd
+       description: OKD 311 repo
+       baseurl: https://rpms.svc.ci.openshift.org/openshift-origin-v3.11/
+       gpgcheck: no
