@@ -158,7 +158,6 @@ resource "aws_instance" "master" {
       "sudo yum -y install python-pip",
       "sudo pip install ansible",
       "cd ~ && git clone https://github.com/openshift/openshift-ansible",
-      "mv /tmp/prepare.yaml openshift-ansible/.",
 
       # Repo
       "cd ~ && git clone https://github.com/grdnrio/sa-toolkit.git",
