@@ -35,11 +35,9 @@ module "aws_networking" {
 }
 
 resource "aws_instance" "master" {
-  
   tags = {
     Name = "master"
   }
-
   connection {
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
@@ -55,7 +53,6 @@ resource "aws_instance" "master" {
     volume_type = "gp2"
     volume_size = "20"
   }
-
   provisioner "file" {
     source      = "${var.private_key_path}"
     destination = "/home/ubuntu/.ssh/id_rsa"
@@ -141,6 +138,9 @@ resource "aws_instance" "worker" {
   }
 }
 
+output "master_access" {
+    value = ["ssh ubuntu@${aws_instance.master.public_ip}"]
+}
 output "master-lighthouse" {
   value = "${aws_instance.master.public_ip}:80/login"
 }
