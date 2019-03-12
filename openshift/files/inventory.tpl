@@ -1,34 +1,28 @@
-
-# Create an OSEv3 group that contains the masters, nodes, and etcd groups
 [OSEv3:children]
 masters
-nodes
 etcd
-
-# Set variables common for all OSEv3 hosts
+nodes
 [OSEv3:vars]
-# SSH user, this user should allow ssh based auth without requiring a password
 ansible_ssh_user=centos
-
-# If ansible_ssh_user is not root, ansible_become must be set to true
+ansible_sudo=true
 ansible_become=true
-
-openshift_deployment_type=origin
-
-# uncomment the following to enable htpasswd authentication; defaults to AllowAllPasswordIdentityProvider
+deployment_type=origin
+os_sdn_network_plugin_name='redhat/openshift-ovs-multitenant'
+openshift_install_examples=true
+openshift_docker_options='--selinux-enabled --insecure-registry 172.30.0.0/16'
 openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'}]
-
-# host group for masters
+openshift_master_htpasswd_users={'admin' : '$apr1$zTCG/myL$mj1ZMOSkYg7a9NLZK9Tk9.'}
+openshift_master_default_subdomain=apps.${master_public_ip}
+openshift_master_cluster_public_hostname=${master_public_ip}
+openshift_master_cluster_hostname=${master_public_ip}
+openshift_disable_check=disk_availability,docker_storage,memory_availability
+openshift_hosted_router_selector='node-role.kubernetes.io/infra=true'
 [masters]
 master
-
-# host group for etcd
 [etcd]
 master
-
-# host group for nodes, includes region info
 [nodes]
-master openshift_node_group_name='node-config-master'
+master openshift_node_group_name='node-config-master-infra' openshift_schedulable=true
 worker-1 openshift_node_group_name='node-config-compute'
 worker-2 openshift_node_group_name='node-config-compute'
 worker-3 openshift_node_group_name='node-config-compute'
