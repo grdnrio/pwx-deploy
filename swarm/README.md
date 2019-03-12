@@ -1,4 +1,4 @@
-Portworx - Swarm Deploy
+# Portworx - Swarm Deploy
 
 This is a Terraform script to deploy a Swarm cluster with a running Portworx cluster on AWS. It pre-configures the following:
 
