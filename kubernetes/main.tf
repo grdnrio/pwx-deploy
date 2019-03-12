@@ -289,9 +289,9 @@ output "master1_access" {
 }
 
 output "lighthouse_url" {
-    value = ["http://${aws_instance.worker.0.public_ip}:32678"]
+    value = ["http://${aws_instance.worker.0.public_ip}:31313"]
 }
 
 output "grafana_url" {
-    value = ["http://${aws_instance.worker.0.public_ip}:30950"]
+    value = ["http://${aws_instance.worker.0.public_ip}:31522"]
 }

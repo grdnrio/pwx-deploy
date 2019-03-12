@@ -115,7 +115,7 @@ resource "aws_security_group" "default" {
 resource "aws_instance" "master" {
   
   tags = {
-    Name = "master-${ count.index + 1 }"
+    Name = "master"
   }
 
   connection {
@@ -149,7 +149,7 @@ resource "aws_instance" "master" {
   }
    provisioner "remote-exec" {
     inline = [
-      "sudo hostnamectl set-hostname ${self.tags.Name}",
+      "sudo hostnamectl set-hostname master",
       "sudo chmod 600 /home/centos/.ssh/id_rsa",
       "sudo cat /tmp/files/hosts | sudo tee --append /etc/hosts",
       
