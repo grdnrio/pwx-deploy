@@ -181,13 +181,9 @@ resource "null_resource" "ansible" {
 
 
 output "master1_access" {
-    value = ["ssh centos@${aws_instance.master.public_ip}"]
+    value = ["ssh centos@${aws_instance.master.public_ip}  then run oc login -u system:admin -n default"]
 }
 
 output "openshift_dashboard" {
-    value = ["https://${aws_instance.master.public_ip}:8443/console"]
-}
-
-output "grafana_url" {
-    value = ["http://${aws_instance.worker.0.public_ip}:30950"]
+    value = ["https://${aws_instance.master.public_ip}:8443/console    -   admin:admin"]
 }
