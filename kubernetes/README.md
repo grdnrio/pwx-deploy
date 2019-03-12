@@ -1,4 +1,4 @@
-# pwx-tf-deploy
+# Portworx - Kubernetes Deploy
 This is a Terraform script to one or more Kubernetes clussters, each with a running Portworx cluster on AWS. It pre-configures the following:
 
 - Portworx latest version
