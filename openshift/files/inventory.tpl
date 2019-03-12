@@ -17,6 +17,7 @@ openshift_master_cluster_public_hostname=${master_public_ip}
 openshift_master_cluster_hostname=${master_public_ip}
 openshift_disable_check=disk_availability,docker_storage,memory_availability
 openshift_hosted_router_selector='node-role.kubernetes.io/infra=true'
+openshift_enable_service_catalog=false
 [masters]
 master
 [etcd]
