@@ -1,0 +1,19 @@
+nodes:
+  - address: node-1
+    internal_address: 10.0.1.11
+    user: ubuntu
+    role: [controlplane,worker,etcd]
+  - address: node-2
+    internal_address: 10.0.1.12
+    user: ubuntu
+    role: [controlplane,worker,etcd]
+  - address: nodes-3
+    internal_address: 10.0.1.13
+    user: ubuntu
+    role: [controlplane,worker,etcd]
+
+services:
+  etcd:
+    snapshot: true
+    creation: 6h
+    retention: 24h
