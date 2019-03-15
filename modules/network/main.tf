@@ -82,3 +82,7 @@ output "subnet" {
 output "security_group" {
   value = "${aws_security_group.default.id}"
 }
+
+output "vpc" {
+  value = "${aws_vpc.default.id}"
+}
