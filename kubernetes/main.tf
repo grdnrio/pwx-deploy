@@ -20,7 +20,7 @@ variable "clusters" {
 
 variable "workers" {
   type = "list"
-  default = ["1", "2", "3", "4", "5"]
+  default = ["1", "2", "3"]
 }
 
 variable "join_token" {
@@ -84,6 +84,11 @@ resource "aws_instance" "master" {
   provisioner "file" {
     source      = "files/"
     destination = "/tmp"
+  }
+
+    provisioner "file" {
+    source      = "../apps/"
+    destination = "/tmp/apps"
   }
   provisioner "file" {
     source      = "${var.private_key_path}"
@@ -196,6 +201,39 @@ resource "aws_instance" "worker" {
   }
 }
 
+resource "null_resource" "appdeploy" {
+
+  connection {
+    user = "ubuntu"
+    private_key = "${file(var.private_key_path)}"
+    host = "${aws_instance.master.0.public_ip}"
+  }
+  triggers {
+    build_number = "${timestamp()}"
+  }
+
+  depends_on = ["aws_instance.worker", "aws_instance.master"]
+
+  provisioner "remote-exec" {
+    inline = [
+      # Deploy demo app
+      "sleep 60",
+      "sudo helm update",
+      "kubectl apply -f /tmp/apps/mysql-vol.yaml",
+      "sudo helm install --name petclinic-db --set 'mysqlDatabase=petclinic,mysqlRootPassword=superpassword,persistence.storageClass=px-repl3-sc' stable/mysql",
+      "sleep 10",
+      "kubectl apply -f /tmp/apps/petclinic-deployment.yaml",
+
+      # Deploy sample apps
+      "kubectl apply -f /home/ubuntu/sa-toolkit/postgres/postgres-deploy.yaml",
+      "kubectl apply -f https://raw.githubusercontent.com/portworx/px-poc/master/mongodb/k8s/mongo-deploy.yaml?token=ACLDEYML06NLG0FbGz9GgzUbu7W92rDvks5cq1y5wA%3D%3D",
+      "kubectl apply -f /tmp/jenkins-sc.yaml",
+      "sleep 10",
+      "sudo helm install --name px-jenkins stable/jenkins --set 'Persistence.StorageClass=px-jenkins-sc'"
+    ] 
+  }
+}
+
 resource "null_resource" "storkctl" {
 
   connection {
@@ -207,7 +245,7 @@ resource "null_resource" "storkctl" {
     multi_master = "${ length(var.clusters) > 1 }"
   }
 
-  depends_on = ["aws_instance.worker", "aws_instance.master"]
+  depends_on = ["null_resource.appdeploy"]
 
   provisioner "remote-exec" {
     inline = [
@@ -231,12 +269,4 @@ EOF
 
 output "master1_access" {
     value = ["ssh ubuntu@${aws_instance.master.0.public_ip}"]
-}
-
-output "lighthouse_url" {
-    value = ["http://${aws_instance.worker.0.public_ip}:31313"]
-}
-
-output "grafana_url" {
-    value = ["http://${aws_instance.worker.0.public_ip}:31522"]
 }
