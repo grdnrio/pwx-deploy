@@ -131,7 +131,9 @@ resource "aws_instance" "master" {
       "sudo snap install helm --classic",
       "kubectl apply -f /tmp/tiller-rbac.yaml",
       ". ~/.profile",
-      "sudo helm init --service-account tiller",
+      "sudo helm init --service-account tiller --wait",
+      "sleep 10",
+      "sudo helm init --upgrade",
       
       # Stork binary installation
       "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/2.0.0/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
@@ -247,18 +249,16 @@ resource "null_resource" "appdeploy" {
   provisioner "remote-exec" {
     inline = [
       # Deploy demo app
-      "sleep 60",
-      "sudo helm update",
       "kubectl apply -f /tmp/apps/mysql-vol.yaml",
-      "sudo helm install --name petclinic-db --set 'mysqlDatabase=petclinic,mysqlRootPassword=superpassword,persistence.storageClass=px-repl3-sc' stable/mysql",
       "sleep 10",
+      "sudo helm install --name petclinic-db --set 'mysqlDatabase=petclinic,mysqlRootPassword=superpassword,persistence.storageClass=px-repl3-sc' stable/mysql",
       "kubectl apply -f /tmp/apps/petclinic-deployment.yaml",
 
       # Deploy sample apps
       "kubectl apply -f /home/ubuntu/sa-toolkit/postgres/postgres-deploy.yaml",
       "kubectl apply -f /tmp/mongo.yaml",
       "kubectl apply -f /tmp/jenkins.yaml",
-      "sleep 10",
+      "sleep 5",
       "sudo helm install --name px-jenkins4 stable/jenkins --set 'persistence.existingClaim=jenkins-data'"
     ] 
   }
