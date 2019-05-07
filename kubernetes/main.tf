@@ -200,6 +200,36 @@ resource "aws_instance" "worker" {
     ]
   }
 }
+resource "null_resource" "storkctl" {
+
+  connection {
+    user = "ubuntu"
+    private_key = "${file(var.private_key_path)}"
+    host = "${aws_instance.master.0.public_ip}"
+  }
+  triggers {
+    multi_master = "${ length(var.clusters) > 1 }"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+<<EOF
+if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
+  while : ; do
+    token=$(ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d " ")
+    echo $token | grep -Eq '.{128}'
+    [ $? -eq 0 ] && break
+    sleep 5
+  done
+  ssh -oStrictHostKeyChecking=no master-c2 storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\    ip: worker-c2-1\n    token: '$token >/home/ubuntu/cp.yaml
+  kubectl apply -f /home/ubuntu/cp.yaml
+else
+  echo "Nothing to do. Single cluster deployment"
+fi
+EOF
+    ] 
+  }
+}
 
 resource "null_resource" "appdeploy" {
 
@@ -226,43 +256,10 @@ resource "null_resource" "appdeploy" {
 
       # Deploy sample apps
       "kubectl apply -f /home/ubuntu/sa-toolkit/postgres/postgres-deploy.yaml",
-      "kubectl apply -f https://raw.githubusercontent.com/portworx/px-poc/master/mongodb/k8s/mongo-deploy.yaml?token=ACLDEYML06NLG0FbGz9GgzUbu7W92rDvks5cq1y5wA%3D%3D",
-      "kubectl apply -f /tmp/jenkins-sc.yaml",
+      "kubectl apply -f /tmp/mongo.yaml",
+      "kubectl apply -f /tmp/jenkins.yaml",
       "sleep 10",
-      "sudo helm install --name px-jenkins stable/jenkins --set 'Persistence.StorageClass=px-jenkins-sc'"
-    ] 
-  }
-}
-
-resource "null_resource" "storkctl" {
-
-  connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master.0.public_ip}"
-  }
-  triggers {
-    multi_master = "${ length(var.clusters) > 1 }"
-  }
-
-  depends_on = ["null_resource.appdeploy"]
-
-  provisioner "remote-exec" {
-    inline = [
-<<EOF
-if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
-  while : ; do
-    token=$(ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d " ")
-    echo $token | grep -Eq '.{128}'
-    [ $? -eq 0 ] && break
-    sleep 5
-  done
-  ssh -oStrictHostKeyChecking=no master-c2 storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\    ip: worker-c2-1\n    token: '$token >/home/ubuntu/cp.yaml
-  kubectl apply -f /home/ubuntu/cp.yaml
-else
-  echo "Nothing to do. Single cluster deployment"
-fi
-EOF
+      "sudo helm install --name px-jenkins4 stable/jenkins --set 'persistence.existingClaim=jenkins-data'"
     ] 
   }
 }
