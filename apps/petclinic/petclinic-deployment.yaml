@@ -42,6 +42,7 @@ spec:
       labels:
         app: petclinic
     spec:
+      schedulerName: stork
       containers:
       - name: petclinic
         image: springdeveloper/spring-petclinic:2.0.0.BUILD-SNAPSHOT
@@ -68,4 +69,4 @@ spec:
         - name: MYSQL_USERNAME
           value: root
         - name: MYSQL_PASSWORD
-          value: superpassword
+          value: supermysql

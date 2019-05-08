@@ -1,0 +1,421 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: demo-jenkins
+  labels:
+    "app.kubernetes.io/name": 'jenkins'
+    "helm.sh/chart": "jenkins-1.1.16"
+    "app.kubernetes.io/instance": "demo"
+    "app.kubernetes.io/component": "jenkins-master"
+type: Opaque
+data:
+  jenkins-admin-password: "c3VwZXJqZW5raW5z"
+  jenkins-admin-user: "YWRtaW4="
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-jenkins
+  labels:
+    "app.kubernetes.io/name": 'jenkins'
+    "helm.sh/chart": "jenkins-1.1.16"
+    "app.kubernetes.io/instance": "demo"
+    "app.kubernetes.io/component": "jenkins-master"
+data:
+  config.xml: |-
+    <?xml version='1.0' encoding='UTF-8'?>
+    <hudson>
+      <disabledAdministrativeMonitors/>
+      <version>lts</version>
+      <numExecutors>0</numExecutors>
+      <mode>NORMAL</mode>
+      <useSecurity>true</useSecurity>
+      <authorizationStrategy class="hudson.security.FullControlOnceLoggedInAuthorizationStrategy">
+        <denyAnonymousReadAccess>true</denyAnonymousReadAccess>
+      </authorizationStrategy>
+      <securityRealm class="hudson.security.LegacySecurityRealm"/>
+      <disableRememberMe>false</disableRememberMe>
+      <projectNamingStrategy class="jenkins.model.ProjectNamingStrategy$DefaultProjectNamingStrategy"/>
+      <workspaceDir>${JENKINS_HOME}/workspace/${ITEM_FULLNAME}</workspaceDir>
+      <buildsDir>${ITEM_ROOTDIR}/builds</buildsDir>
+      <markupFormatter class="hudson.markup.EscapedMarkupFormatter"/>
+      <jdks/>
+      <viewsTabBar class="hudson.views.DefaultViewsTabBar"/>
+      <myViewsTabBar class="hudson.views.DefaultMyViewsTabBar"/>
+      <clouds>
+        <org.csanchez.jenkins.plugins.kubernetes.KubernetesCloud plugin="kubernetes@1.14.0">
+          <name>kubernetes</name>
+          <templates>
+            <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+              <inheritFrom></inheritFrom>
+              <name>default</name>
+              <instanceCap>2147483647</instanceCap>
+              <idleMinutes>0</idleMinutes>
+              <label>demo-jenkins-slave </label>
+              <serviceAccount>default</serviceAccount>
+              <nodeSelector></nodeSelector>
+                <nodeUsageMode>NORMAL</nodeUsageMode>
+              <volumes>
+              </volumes>
+              <containers>
+                <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+                  <name>jnlp</name>
+                  <image>jenkins/jnlp-slave:3.27-1</image>
+                  <privileged>false</privileged>
+                  <alwaysPullImage>false</alwaysPullImage>
+                  <workingDir>/home/jenkins</workingDir>
+                  <command></command>
+                  <args>${computer.jnlpmac} ${computer.name}</args>
+                  <ttyEnabled>false</ttyEnabled>
+                  <resourceRequestCpu>200m</resourceRequestCpu>
+                  <resourceRequestMemory>256Mi</resourceRequestMemory>
+                  <resourceLimitCpu>200m</resourceLimitCpu>
+                  <resourceLimitMemory>256Mi</resourceLimitMemory>
+                  <envVars>
+                    <org.csanchez.jenkins.plugins.kubernetes.ContainerEnvVar>
+                      <key>JENKINS_URL</key>
+                      <value>http://demo-jenkins.default.svc.cluster.local:8080</value>
+                    </org.csanchez.jenkins.plugins.kubernetes.ContainerEnvVar>
+                  </envVars>
+                </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+              </containers>
+              <envVars>
+              </envVars>
+              <annotations/>
+              <imagePullSecrets/>
+              <nodeProperties/>
+              <podRetention class="org.csanchez.jenkins.plugins.kubernetes.pod.retention.Default"/>
+            </org.csanchez.jenkins.plugins.kubernetes.PodTemplate></templates>
+          <serverUrl>https://kubernetes.default</serverUrl>
+          <skipTlsVerify>false</skipTlsVerify>
+          <namespace>default</namespace>
+          <jenkinsUrl>http://demo-jenkins:8080</jenkinsUrl>
+          <jenkinsTunnel>demo-jenkins-agent:50000</jenkinsTunnel>
+          <containerCap>10</containerCap>
+          <retentionTimeout>5</retentionTimeout>
+          <connectTimeout>0</connectTimeout>
+          <readTimeout>0</readTimeout>
+          <podRetention class="org.csanchez.jenkins.plugins.kubernetes.pod.retention.Never"/>
+        </org.csanchez.jenkins.plugins.kubernetes.KubernetesCloud>
+      </clouds>
+      <quietPeriod>5</quietPeriod>
+      <scmCheckoutRetryCount>0</scmCheckoutRetryCount>
+      <views>
+        <hudson.model.AllView>
+          <owner class="hudson" reference="../../.."/>
+          <name>All</name>
+          <filterExecutors>false</filterExecutors>
+          <filterQueue>false</filterQueue>
+          <properties class="hudson.model.View$PropertyList"/>
+        </hudson.model.AllView>
+      </views>
+      <primaryView>All</primaryView>
+      <slaveAgentPort>50000</slaveAgentPort>
+      <disabledAgentProtocols>
+        <string>JNLP-connect</string>
+        <string>JNLP2-connect</string>
+      </disabledAgentProtocols>
+      <label></label>
+      <crumbIssuer class="hudson.security.csrf.DefaultCrumbIssuer">
+        <excludeClientIPFromCrumb>true</excludeClientIPFromCrumb>
+      </crumbIssuer>
+      <nodeProperties/>
+      <globalNodeProperties/>
+      <noUsageStatistics>true</noUsageStatistics>
+    </hudson>
+  jenkins.model.JenkinsLocationConfiguration.xml: |-
+    <?xml version='1.1' encoding='UTF-8'?>
+    <jenkins.model.JenkinsLocationConfiguration>
+      <adminAddress></adminAddress>
+      <jenkinsUrl>http://demo-jenkins:8080</jenkinsUrl>
+    </jenkins.model.JenkinsLocationConfiguration>
+  jenkins.CLI.xml: |-
+    <?xml version='1.1' encoding='UTF-8'?>
+    <jenkins.CLI>
+      <enabled>false</enabled>
+    </jenkins.CLI>
+  apply_config.sh: |-
+    mkdir -p /usr/share/jenkins/ref/secrets/;
+    echo "false" > /usr/share/jenkins/ref/secrets/slave-to-master-security-kill-switch;
+    yes n | cp -i /var/jenkins_config/config.xml /var/jenkins_home;
+    yes n | cp -i /var/jenkins_config/jenkins.CLI.xml /var/jenkins_home;
+    yes n | cp -i /var/jenkins_config/jenkins.model.JenkinsLocationConfiguration.xml /var/jenkins_home;
+    # Install missing plugins
+    cp /var/jenkins_config/plugins.txt /var/jenkins_home;
+    rm -rf /usr/share/jenkins/ref/plugins/*.lock
+    /usr/local/bin/install-plugins.sh `echo $(cat /var/jenkins_home/plugins.txt)`;
+    # Copy plugins to shared volume
+    yes n | cp -i /usr/share/jenkins/ref/plugins/* /var/jenkins_plugins/;
+  plugins.txt: |-
+    kubernetes:1.14.0
+    workflow-job:2.31
+    workflow-aggregator:2.6
+    credentials-binding:1.17
+    git:3.9.1
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: demo-jenkins
+  labels:
+    "app.kubernetes.io/name": 'jenkins'
+    "helm.sh/chart": "jenkins-1.1.16"
+    "app.kubernetes.io/instance": "demo"
+    "app.kubernetes.io/component": "jenkins-master"
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: demo-jenkins-schedule-agents
+  namespace: default
+  labels:
+    "app.kubernetes.io/name": 'jenkins'
+    "helm.sh/chart": "jenkins-1.1.16"
+    "app.kubernetes.io/instance": "demo"
+    "app.kubernetes.io/component": "jenkins-master"
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/exec", "pods/log"]
+  verbs: ["*"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: demo-jenkins-schedule-agents
+  namespace: default
+  labels:
+    "app.kubernetes.io/name": 'jenkins'
+    "helm.sh/chart": "jenkins-1.1.16"
+    "app.kubernetes.io/instance": "demo"
+    "app.kubernetes.io/component": "jenkins-master"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: demo-jenkins-schedule-agents
+subjects:
+- kind: ServiceAccount
+  name: demo-jenkins
+  namespace: default
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-jenkins-agent
+  labels:
+    "app.kubernetes.io/name": 'jenkins'
+    "helm.sh/chart": "jenkins-1.1.16"
+    "app.kubernetes.io/instance": "demo"
+    "app.kubernetes.io/component": "jenkins-master"
+spec:
+  ports:
+    - port: 50000
+      targetPort: 50000
+
+      name: slavelistener
+  selector:
+    "app.kubernetes.io/component": "jenkins-master"
+    "app.kubernetes.io/instance": "demo"
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-jenkins
+  labels:
+    "app.kubernetes.io/name": 'jenkins'
+    "helm.sh/chart": "jenkins-1.1.16"
+    "app.kubernetes.io/instance": "demo"
+    "app.kubernetes.io/component": "jenkins-master"
+spec:
+  ports:
+    - port: 8080
+      name: http
+      targetPort: 8080
+
+  selector:
+    "app.kubernetes.io/component": "jenkins-master"
+    "app.kubernetes.io/instance": "demo"
+  type: LoadBalancer
+
+  loadBalancerSourceRanges:
+    - 0.0.0.0/0
+
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: demo-jenkins
+  labels:
+    "app.kubernetes.io/name": 'jenkins'
+    "helm.sh/chart": "jenkins-1.1.16"
+    "app.kubernetes.io/instance": "demo"
+    "app.kubernetes.io/component": "jenkins-master"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      "app.kubernetes.io/component": "jenkins-master"
+      "app.kubernetes.io/instance": "demo"
+  template:
+    metadata:
+      labels:
+        "app.kubernetes.io/name": 'jenkins'
+        "helm.sh/chart": "jenkins-1.1.16"
+        "app.kubernetes.io/instance": "demo"
+        "app.kubernetes.io/component": "jenkins-master"
+      annotations:
+        checksum/config: 912a822a3efeb56292787cdf6fcfce4edaeac2a5f4e4e408451b7237ee39abc1
+    spec:
+      schedulerName: stork
+      securityContext:
+        runAsUser: 0
+      serviceAccountName: "demo-jenkins"
+      initContainers:
+        - name: "copy-default-config"
+          image: "jenkins/jenkins:lts"
+          imagePullPolicy: "Always"
+          command: [ "sh", "/var/jenkins_config/apply_config.sh" ]
+          env:
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: demo-jenkins
+                  key: jenkins-admin-password
+            - name: ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: demo-jenkins
+                  key: jenkins-admin-user
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 4096Mi
+            requests:
+              cpu: 50m
+              memory: 256Mi
+
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+            - mountPath: /var/jenkins_home
+              name: jenkins-home
+            - mountPath: /var/jenkins_config
+              name: jenkins-config
+            - mountPath: /usr/share/jenkins/ref/plugins
+              name: plugins
+            - mountPath: /var/jenkins_plugins
+              name: plugin-dir
+            - mountPath: /usr/share/jenkins/ref/secrets/
+              name: secrets-dir
+      containers:
+        - name: demo-jenkins
+          image: "jenkins/jenkins:lts"
+          imagePullPolicy: "Always"
+          args: [ "--argumentsRealm.passwd.$(ADMIN_USER)=$(ADMIN_PASSWORD)",  "--argumentsRealm.roles.$(ADMIN_USER)=admin"]
+          env:
+            - name: JAVA_OPTS
+              value: ""
+            - name: JENKINS_OPTS
+              value: ""
+            - name: JENKINS_SLAVE_AGENT_PORT
+              value: "50000"
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: demo-jenkins
+                  key: jenkins-admin-password
+            - name: ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: demo-jenkins
+                  key: jenkins-admin-user
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 50000
+              name: slavelistener
+          livenessProbe:
+            httpGet:
+              path: "/login"
+              port: http
+            initialDelaySeconds: 90
+            timeoutSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: "/login"
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 4096Mi
+            requests:
+              cpu: 50m
+              memory: 256Mi
+
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+            - mountPath: /var/jenkins_home
+              name: jenkins-home
+              readOnly: false
+            - mountPath: /var/jenkins_config
+              name: jenkins-config
+              readOnly: true
+            - mountPath: /usr/share/jenkins/ref/plugins/
+              name: plugin-dir
+              readOnly: false
+            - mountPath: /usr/share/jenkins/ref/secrets/
+              name: secrets-dir
+              readOnly: false
+
+      volumes:
+      - name: plugins
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      - name: jenkins-config
+        configMap:
+          name: demo-jenkins
+      - name: plugin-dir
+        emptyDir: {}
+      - name: secrets-dir
+        emptyDir: {}
+      - name: jenkins-home
+        persistentVolumeClaim:
+          claimName: jenkins-data
+
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1beta1
+metadata:
+  name: px-jenkins-sc
+provisioner: kubernetes.io/portworx-volume
+parameters:
+  repl: "2"
+  shared: "true"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+   name: jenkins-data
+   annotations:
+     volume.beta.kubernetes.io/storage-class: px-jenkins-sc
+spec:
+   accessModes:
+     - ReadWriteOnce
+   resources:
+     requests:
+       storage: 6Gi
