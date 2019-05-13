@@ -8,24 +8,10 @@ spec:
   type: NodePort
   ports:
   - name: http
-    port: 80
-    nodePort: 32323
-    targetPort: 8080
-  selector:
-    app: petclinic
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: petclinic
-  labels:
-    app: petclinic
-spec:
-  type: LoadBalancer
-  ports:
-  - name: http
+    protocol: TCP
     port: 80
     targetPort: 8080
+    nodePort: 30333
   selector:
     app: petclinic
 ---
