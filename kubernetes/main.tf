@@ -215,6 +215,10 @@ resource "null_resource" "appdeploy" {
       "kubectl apply -f /tmp/apps/petclinic-deployment.yaml",
       "kubectl apply -f /tmp/apps/postgres-deployment.yaml",
       "kubectl apply -f /tmp/apps/mongo-deployment.yaml",
+      "kubectl apply -f /tmp/apps/mysql-deployment.yaml",
+      "kubectl apply -f /tmp/apps/redis-deployment.yaml",
+      "kubectl apply -f /tmp/apps/wordpress-db.yaml",
+      "kubectl apply -f /tmp/apps/wordpress-deployment.yaml"
       #"kubectl apply -f /tmp/apps/jenkins-deployment.yaml"
     ] 
   }
