@@ -1,0 +1,17 @@
+[Unit]
+Description=etcd key-value store
+After=network.target
+
+[Service]
+User=etcd
+Type=notify
+PermissionsStartOnly=true
+Environment=ETCD_NAME=%H
+EnvironmentFile=-/etc/default/%p
+ExecStart=/usr/local/bin/etcd --advertise-client-urls 'http://localhost:2379,http://10.0.1.30:2379' --listen-client-urls 'http://0.0.0.0:2379' --data-dir /var/lib/etcd/default
+Restart=on-abnormal
+RestartSec=10s
+LimitNOFILE=40000
+
+[Install]
+WantedBy=multi-user.target
