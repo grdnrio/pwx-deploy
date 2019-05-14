@@ -1,0 +1,11 @@
+apiVersion: stork.libopenstorage.org/v1alpha1
+kind: ClusterDomainUpdate
+metadata:
+ name: deactivate-cluster1
+ namespace: kube-system
+spec:
+  # Name of the metro domain that needs to be activated/deactivated
+  clusterdomain: cluster1
+  # Set to true to activate cluster domain
+  # Set to false to deactivate cluster domain
+  active: false
