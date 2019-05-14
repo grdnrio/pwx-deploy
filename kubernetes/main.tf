@@ -124,7 +124,7 @@ resource "aws_instance" "master" {
       "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
       "kubectl apply -f https://docs.portworx.com/samples/k8s/portworx-pxc-operator.yaml",
       "kubectl create secret generic alertmanager-portworx --from-file=/tmp/portworx-pxc-alertmanager.yaml -n kube-system",
-      "kubectl apply -f 'https://install.portworx.com/2.0.2?mc=false&kbver=1.13.3&b=true&c=px-demo-${count.index + 1}&stork=true&lh=true&mon=true&st=k8s'",
+      #"kubectl apply -f 'https://install.portworx.com/2.0.2?mc=false&kbver=1.13.3&b=true&c=px-demo-${count.index + 1}&stork=true&lh=true&mon=true&st=k8s'",
       "kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml",
       
       # Stork binary installation
@@ -224,38 +224,38 @@ resource "null_resource" "appdeploy" {
   }
 }
 
-resource "null_resource" "storkctl" {
+# resource "null_resource" "storkctl" {
 
-  connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master.0.public_ip}"
-  }
-  triggers {
-    multi_master = "${ length(var.clusters) > 1 }"
-  }
+#   connection {
+#     user = "ubuntu"
+#     private_key = "${file(var.private_key_path)}"
+#     host = "${aws_instance.master.0.public_ip}"
+#   }
+#   triggers {
+#     multi_master = "${ length(var.clusters) > 1 }"
+#   }
 
-  depends_on = ["null_resource.appdeploy"]
+#   depends_on = ["null_resource.appdeploy"]
 
-  provisioner "remote-exec" {
-    inline = [
-<<EOF
-if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
-  while : ; do
-    token=$(ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d " ")
-    echo $token | grep -Eq '.{128}'
-    [ $? -eq 0 ] && break
-    sleep 5
-  done
-  ssh -oStrictHostKeyChecking=no master-c2 storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\    ip: worker-c2-1\n    token: '$token >/home/ubuntu/cp.yaml
-  kubectl apply -f /home/ubuntu/cp.yaml
-else
-  echo "Nothing to do. Single cluster deployment"
-fi
-EOF
-    ] 
-  }
-}
+#   provisioner "remote-exec" {
+#     inline = [
+# <<EOF
+# if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
+#   while : ; do
+#     token=$(ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d " ")
+#     echo $token | grep -Eq '.{128}'
+#     [ $? -eq 0 ] && break
+#     sleep 5
+#   done
+#   ssh -oStrictHostKeyChecking=no master-c2 storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\    ip: worker-c2-1\n    token: '$token >/home/ubuntu/cp.yaml
+#   kubectl apply -f /home/ubuntu/cp.yaml
+# else
+#   echo "Nothing to do. Single cluster deployment"
+# fi
+# EOF
+#     ] 
+#   }
+# }
 
 output "master1_access" {
     value = ["ssh ubuntu@${aws_instance.master.0.public_ip}"]
