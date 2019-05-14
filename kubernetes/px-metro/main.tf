@@ -322,6 +322,8 @@ else
   echo "Nothing to do. Single cluster deployment"
 fi
 
+ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT 9035-1a42-beb4-41f7-a4c0-9af0-ccd9-dab6
+sleep 3
 ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT 4fbc-009e-42d0-46ae-846b-1acd-6f02-abb0
 sleep 3
 kubectl apply -f /tmp/resource-sync.yaml
@@ -332,4 +334,8 @@ EOF
 
 output "master1_access" {
     value = ["ssh ubuntu@${aws_instance.master.0.public_ip}"]
+}
+
+output "app_loadbalancer" {
+    value = ["${aws_elb.k8s-app.dns_name}"]
 }
