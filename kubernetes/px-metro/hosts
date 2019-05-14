@@ -1,9 +1,0 @@
-10.0.1.10   master-c1
-10.0.1.11   worker-c1-1
-10.0.1.12   worker-c1-2
-10.0.1.13   worker-c1-3
-
-10.0.2.10   master-c2
-10.0.2.11   worker-c2-1
-10.0.2.12   worker-c2-2
-10.0.2.13   worker-c2-3
