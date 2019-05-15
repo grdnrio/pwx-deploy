@@ -174,7 +174,7 @@ resource "aws_instance" "master" {
       "kubectl apply -f 'https://install.portworx.com/2.1?mc=false&kbver=1.13.3&k=etcd%3Ahttp%3A%2F%2F10.0.1.30%3A2379&c=px-demo&stork=true&st=k8s'",
       "kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml",
       "sleep 10",
-      "sudo snap install jq && hash -r",
+      "sudo apt-get update && sudo apt-get install -y jq && hash -r",
       "sudo bash /tmp/patch.sh cluster-${count.index+1}",
       # Stork binary installation
       "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/latest/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
@@ -271,28 +271,6 @@ resource "aws_elb" "k8s-app" {
   }
 }
 
-resource "null_resource" "appdeploy" {
-
-  connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master.0.public_ip}"
-  }
-  triggers {
-    build_number = "${timestamp()}"
-  }
-
-  depends_on = ["aws_instance.worker", "aws_instance.master"]
-
-  provisioner "remote-exec" {
-    inline = [
-      # Deploy demo app
-      "kubectl apply -f /tmp/apps/petclinic-db.yaml",
-      "kubectl apply -f /tmp/apps/petclinic-deployment.yaml"
-    ] 
-  }
-}
-
 resource "null_resource" "storkctl" {
 
   connection {
@@ -304,7 +282,7 @@ resource "null_resource" "storkctl" {
     multi_master = "${ length(var.clusters) > 1 }"
   }
 
-  depends_on = ["null_resource.appdeploy"]
+  depends_on = ["aws_instance.master", "aws_instance.worker"]
 
   provisioner "remote-exec" {
     inline = [
@@ -314,6 +292,7 @@ if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
     token=$(ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d " ")
     echo $token | grep -Eq '.{128}'
     [ $? -eq 0 ] && break
+    echo "Waiting for the pxctl binary"
     sleep 5
   done
   ssh -oStrictHostKeyChecking=no master-c2 storkctl generate clusterpair -n default remotecluster | sed '/insert_storage_options_here/c\    mode: DisasterRecovery' >/home/ubuntu/cp.yaml
@@ -321,14 +300,44 @@ if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
 else
   echo "Nothing to do. Single cluster deployment"
 fi
-
+while : ; do
+    status=$(curl worker-c1-1:9001/status | jq '.StorageSpec."Info" | .Status')
+    [ "$status" = "\"Up\"" ] && break
+    echo "Waiting for PWX quorum"
+    sleep 3
+done
+sleep 20
 ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT 9035-1a42-beb4-41f7-a4c0-9af0-ccd9-dab6
-sleep 3
+sleep 5
 ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT 4fbc-009e-42d0-46ae-846b-1acd-6f02-abb0
-sleep 3
-kubectl apply -f /tmp/resource-sync.yaml
+sleep 5
+kubectl apply -f /tmp/sched-policy.yaml
+sleep 60
 EOF
     ]
+  }
+}
+
+resource "null_resource" "appdeploy" {
+
+  connection {
+    user = "ubuntu"
+    private_key = "${file(var.private_key_path)}"
+    host = "${aws_instance.master.0.public_ip}"
+  }
+  triggers {
+    build_number = "${timestamp()}"
+  }
+
+  depends_on = ["null_resource.storkctl"]
+
+  provisioner "remote-exec" {
+    inline = [
+      # Deploy demo app
+      "kubectl apply -f /tmp/apps/petclinic-db.yaml",
+      "kubectl apply -f /tmp/apps/petclinic-deployment.yaml",
+      "kubectl apply -f /tmp/migration-sched.yaml"
+    ] 
   }
 }
 
