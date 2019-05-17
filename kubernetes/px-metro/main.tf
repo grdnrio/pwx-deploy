@@ -97,9 +97,12 @@ resource "aws_instance" "etcd" {
 }
 
 resource "aws_instance" "master" {
-  
   tags = {
     Name = "master-c${count.index + 1}"
+  }
+
+  tags = {
+    Cluster = "${count.index + 1}"
   }
   
   count = "${length(var.clusters)}"
@@ -194,6 +197,9 @@ resource "aws_instance" "worker" {
   tags = {
     Name = "worker-c${var.clusters[count.index % length(var.clusters)]}-${var.workers[count.index % length(var.workers)]}"
   }
+  tags = {
+    Cluster = "${var.clusters[count.index % length(var.clusters)]}"
+  }
   private_ip = "10.0.1.${var.clusters[count.index % length(var.clusters)]}${var.workers[count.index % length(var.workers)]}"
   ami = "${data.aws_ami.default.id}"
   key_name = "${var.key_name}"
@@ -243,7 +249,48 @@ resource "aws_instance" "worker" {
   }
 }
 
+resource "aws_resourcegroups_group" "cluster-1" {
+  name        = "cluster1"
+
+  resource_query {
+    query = <<JSON
+{
+  "ResourceTypeFilters": [
+    "AWS::EC2::Instance"
+  ],
+  "TagFilters": [
+    {
+      "Key": "Cluster",
+      "Values": ["1"]
+    }
+  ]
+}
+JSON
+  }
+}
+
+resource "aws_resourcegroups_group" "cluster-2" {
+  name        = "cluster2"
+
+  resource_query {
+    query = <<JSON
+{
+  "ResourceTypeFilters": [
+    "AWS::EC2::Instance"
+  ],
+  "TagFilters": [
+    {
+      "Key": "Cluster",
+      "Values": ["2"]
+    }
+  ]
+}
+JSON
+  }
+}
+
 resource "aws_elb" "k8s-app" {
+  name = "px-metro-demo"
   subnets = ["${module.aws_networking.subnet}"]
   security_groups = ["${module.aws_networking.security_group}"]
   listener {
@@ -270,6 +317,7 @@ resource "aws_elb" "k8s-app" {
     Name = "px-metro-demo-lb"
   }
 }
+
 
 resource "null_resource" "storkctl" {
 
@@ -309,7 +357,7 @@ done
 sleep 20
 ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT 9035-1a42-beb4-41f7-a4c0-9af0-ccd9-dab6
 sleep 5
-ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT 4fbc-009e-42d0-46ae-846b-1acd-6f02-abb0
+ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT 44ce-190f-3273-485c-b7a6-730f-98fc-8535
 sleep 5
 kubectl apply -f /tmp/sched-policy.yaml
 sleep 60
@@ -340,6 +388,33 @@ resource "null_resource" "appdeploy" {
     ] 
   }
 }
+
+
+resource "aws_cloudwatch_event_rule" "cluster1-delete" {
+  name        = "cluster1-delete"
+  description = "Capture the master in cluster1 being terminated"
+
+  event_pattern = <<PATTERN
+{
+  "source": [
+    "aws.ec2"
+  ],
+  "detail-type": [
+    "EC2 Instance State-change Notification"
+  ],
+  "detail": {
+    "state": [
+      "shutting-down",
+      "stopping"
+    ],
+    "instance-id": [
+      "${aws_instance.master.0.id}"
+    ]
+  }
+}
+PATTERN
+}
+
 
 output "master1_access" {
     value = ["ssh ubuntu@${aws_instance.master.0.public_ip}"]
