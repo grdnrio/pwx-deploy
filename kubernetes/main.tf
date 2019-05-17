@@ -260,3 +260,14 @@ EOF
 output "master1_access" {
     value = ["ssh ubuntu@${aws_instance.master.0.public_ip}"]
 }
+
+output "master2_access" {
+    value = ["ssh ubuntu@${aws_instance.master.1.public_ip}"]
+}
+
+output "master1_petclinic" {
+    value = ["http://${aws_instance.master.0.public_ip}:30333"]
+}
+output "master1_petclinic" {
+    value = ["http://${aws_instance.master.1.public_ip}:30333"]
+}
