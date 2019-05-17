@@ -5,7 +5,7 @@ metadata:
  namespace: kube-system
 spec:
   # Name of the metro domain that needs to be activated/deactivated
-  clusterdomain: cluster1
+  clusterdomain: cluster-1
   # Set to true to activate cluster domain
   # Set to false to deactivate cluster domain
   active: false
