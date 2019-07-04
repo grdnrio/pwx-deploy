@@ -11,7 +11,7 @@
 # Specify the provider and access details
 provider "aws" {
   region = "${var.aws_region}"
-  version = "~> 1.0"
+  version = "~> 2.0"
 }
 
 variable "clusters" {
@@ -59,6 +59,7 @@ resource "aws_instance" "master" {
     # The default username for our AMI
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
+    host = "${self.public_ip}"
   }
 
   associate_public_ip_address = true
@@ -77,7 +78,7 @@ resource "aws_instance" "master" {
   vpc_security_group_ids = ["${module.aws_networking.security_group}"]
   subnet_id = "${module.aws_networking.subnet}"
 
-  root_block_device = {
+  root_block_device {
     volume_type = "gp2"
     volume_size = "20"
   }
@@ -145,6 +146,7 @@ resource "aws_instance" "worker" {
   connection {
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
+    host = "${self.public_ip}"
   }
   depends_on = ["aws_instance.master"]
   count = "${length(var.clusters) * length(var.workers)}"
@@ -157,11 +159,11 @@ resource "aws_instance" "worker" {
   key_name = "${var.key_name}"
   vpc_security_group_ids = ["${module.aws_networking.security_group}"]
   subnet_id = "${module.aws_networking.subnet}"
-  root_block_device = {
+  root_block_device {
     volume_type = "gp2"
     volume_size = "20"
   }
-  ebs_block_device = {
+  ebs_block_device {
     device_name = "/dev/sdd"
     volume_type = "gp2"
     volume_size = "30"
@@ -209,7 +211,7 @@ resource "null_resource" "appdeploy" {
     private_key = "${file(var.private_key_path)}"
     host = "${aws_instance.master.0.public_ip}"
   }
-  triggers {
+  triggers = {
     build_number = "${timestamp()}"
   }
 
@@ -238,7 +240,7 @@ resource "null_resource" "storkctl" {
     private_key = "${file(var.private_key_path)}"
     host = "${aws_instance.master.0.public_ip}"
   }
-  triggers {
+  triggers = {
     multi_master = "${ length(var.clusters) > 1 }"
   }
 
