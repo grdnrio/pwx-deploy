@@ -11,6 +11,7 @@
 # Specify the provider and access details
 provider "aws" {
   region = "${var.aws_region}"
+  version = "~> 2.0"
 }
 
 
@@ -42,12 +43,13 @@ module "aws_networking" {
 resource "aws_instance" "master" {
   
   tags = {
-    Name = "master-${ count.index + 1 }"
+    Name = "master"
   }
 
   connection {
     user = "centos"
     private_key = "${file(var.private_key_path)}"
+    host = "${self.public_ip}" 
   }
 
   associate_public_ip_address = true
@@ -61,7 +63,7 @@ resource "aws_instance" "master" {
   vpc_security_group_ids = ["${module.aws_networking.security_group}"]
   subnet_id = "${module.aws_networking.subnet}"
 
-  root_block_device = {
+  root_block_device {
     volume_type = "gp2"
     volume_size = "100"
   }
@@ -97,6 +99,7 @@ resource "aws_instance" "worker" {
   connection {
     user = "centos"
     private_key = "${file(var.private_key_path)}"
+    host = "${self.public_ip}"
   }
   depends_on = ["aws_instance.master"]
   count = "3"
@@ -109,11 +112,11 @@ resource "aws_instance" "worker" {
   key_name = "${var.key_name}"
   vpc_security_group_ids = ["${module.aws_networking.security_group}"]
   subnet_id = "${module.aws_networking.subnet}"
-  root_block_device = {
+  root_block_device {
     volume_type = "gp2"
     volume_size = "80"
   }
-  ebs_block_device = {
+  ebs_block_device {
     device_name = "/dev/sdd"
     volume_type = "gp2"
     volume_size = "50"
@@ -138,13 +141,13 @@ resource "aws_instance" "worker" {
 data "template_file" "inventory" {
   template = "${file("files/inventory.tpl")}"
   depends_on = ["aws_instance.worker"]
-  vars {
+  vars  = {
     master_public_ip = "${aws_instance.master.public_ip}"
   }
 }
 
 resource "null_resource" "inventory" {
-  triggers {
+  triggers = {
     template_rendered = "${data.template_file.inventory.rendered}"
   }
   connection {
@@ -159,7 +162,7 @@ resource "null_resource" "inventory" {
 }
 
 resource "null_resource" "ansible" {
-  triggers {
+  triggers = {
     version = "${timestamp()}"
   }
   depends_on = ["null_resource.inventory"]
