@@ -183,6 +183,34 @@ resource "null_resource" "ansible" {
 }
 
 
+resource "null_resource" "portworx" {
+  triggers = {
+    version = "${timestamp()}"
+  }
+  depends_on = ["null_resource.ansible"]
+  connection {
+    user = "centos"
+    private_key = "${file(var.private_key_path)}"
+    host = "${aws_instance.master.public_ip}"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "sleep 10",
+      "oc login -u system:admin -n default",
+      "sleep 5",
+      "oc adm policy add-scc-to-user privileged system:serviceaccount:kube-system:px-account",
+      "oc adm policy add-scc-to-user privileged system:serviceaccount:kube-system:portworx-pvc-controller-account",
+      "oc adm policy add-scc-to-user privileged system:serviceaccount:kube-system:px-lh-account",
+      "oc adm policy add-scc-to-user anyuid system:serviceaccount:kube-system:px-lh-account",
+      "oc adm policy add-scc-to-user anyuid system:serviceaccount:default:default",
+      "oc adm policy add-scc-to-user privileged system:serviceaccount:kube-system:px-csi-account",
+      "sleep 5",
+      "oc apply -f 'https://install.portworx.com/2.0?mc=false&kbver=1.11.0&b=true&s=%2Fdev%2Fxvdd&m=eth0&d=eth0&c=px-cluster-963cade8-8920-4000-a03d-2c8b0fb98727&osft=true&stork=true&lh=true&st=k8s'"
+    ]
+  }
+}
+
+
 output "master1_access" {
     value = ["ssh centos@${aws_instance.master.public_ip}  then run oc login -u system:admin -n default"]
 }
