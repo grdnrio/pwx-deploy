@@ -159,6 +159,7 @@ resource "aws_instance" "etcd" {
   connection {
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
+    host = "${self.public_ip}"
   }
 
   associate_public_ip_address = true
@@ -171,7 +172,7 @@ resource "aws_instance" "etcd" {
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
   subnet_id = "${aws_subnet.etcd.id}"
 
-  root_block_device = {
+  root_block_device {
     volume_type = "gp2"
     volume_size = "20"
   }
@@ -207,6 +208,7 @@ resource "aws_instance" "master-c1" {
   connection {
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
+    host = "${self.public_ip}"
   }
 
   availability_zone = "eu-west-2a"
@@ -220,7 +222,7 @@ resource "aws_instance" "master-c1" {
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
   subnet_id = "${aws_subnet.eu-west-c1.id}"
 
-  root_block_device = {
+  root_block_device {
     volume_type = "gp2"
     volume_size = "20"
   }
@@ -294,6 +296,7 @@ resource "aws_instance" "master-c2" {
   connection {
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
+    host = "${self.public_ip}"
   }
 
   availability_zone = "eu-west-2c"
@@ -307,7 +310,7 @@ resource "aws_instance" "master-c2" {
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
   subnet_id = "${aws_subnet.eu-west-c2.id}"
 
-  root_block_device = {
+  root_block_device {
     volume_type = "gp2"
     volume_size = "20"
   }
@@ -370,6 +373,7 @@ resource "aws_instance" "worker-c1" {
   connection {
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
+    host = "${self.public_ip}"
   }
   depends_on = ["aws_instance.master-c1"]
   count = "3"
@@ -383,11 +387,11 @@ resource "aws_instance" "worker-c1" {
   key_name = "${var.key_name}"
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
   subnet_id = "${aws_subnet.eu-west-c1.id}"
-  root_block_device = {
+  root_block_device {
     volume_type = "gp2"
     volume_size = "20"
   }
-  ebs_block_device = {
+  ebs_block_device {
     device_name = "/dev/sdd"
     volume_type = "gp2"
     volume_size = "30"
@@ -431,6 +435,7 @@ resource "aws_instance" "worker-c2" {
   connection {
     user = "ubuntu"
     private_key = "${file(var.private_key_path)}"
+    host = "${self.public_ip}"
   }
   depends_on = ["aws_instance.master-c2"]
   count = "3"
@@ -444,11 +449,11 @@ resource "aws_instance" "worker-c2" {
   key_name = "${var.key_name}"
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
   subnet_id = "${aws_subnet.eu-west-c2.id}"
-  root_block_device = {
+  root_block_device {
     volume_type = "gp2"
     volume_size = "20"
   }
-  ebs_block_device = {
+  ebs_block_device {
     device_name = "/dev/sdd"
     volume_type = "gp2"
     volume_size = "30"
@@ -517,6 +522,12 @@ resource "aws_elb" "k8s-app" {
   }
 }
 
+data "aws_kms_secret" "license-1" {
+  secret {
+    name    = "license-1"
+    payload = "AQICAHhPm98IaMqcRrPXr6g8K4Ij5n51POkxKvlZyHcZnNNqMQH5egLCWQouyFMZUoc7CxntAAAAhjCBgwYJKoZIhvcNAQcGoHYwdAIBADBvBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDAENUJ0mh3wYOtlS5QIBEIBC2tQqSazOv8POqKIdkbHYiRLzdjPa0+VOq0uz5VXk54I9wlutge4A4qLv12lyyZQEcMkLBmZ/Tcd9AkNz249nY9iO"
+  }
+}
 
 resource "null_resource" "storkctl" {
 
@@ -525,7 +536,7 @@ resource "null_resource" "storkctl" {
     private_key = "${file(var.private_key_path)}"
     host = "${aws_instance.master-c1.public_ip}"
   }
-  triggers {
+  triggers = {
     build_number = "${timestamp()}"
   }
 
@@ -554,7 +565,7 @@ while : ; do
     sleep 3
 done
 sleep 20
-ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT 9035-1a42-beb4-41f7-a4c0-9af0-ccd9-dab6
+ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT ${data.aws_kms_secret.license-1.license-1}
 sleep 5
 ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT 44ce-190f-3273-485c-b7a6-730f-98fc-8535
 sleep 5
