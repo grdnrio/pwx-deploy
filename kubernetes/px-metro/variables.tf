@@ -1,6 +1,6 @@
 #############################################################
 ##
-## This app file contains the variables of Kubernetes Installation
+## This app file contains the variables of PX-Metro Installation
 ## on AWS
 ## 
 ## @year 2019
@@ -20,5 +20,15 @@ variable "key_name" {
 
 variable "private_key_path" {
   description = "Path to private SSH key"
+  default = ""
+}
+
+variable "license_1" {
+  description = "First license key for Portworx Enterprise"
+  default = ""
+}
+
+variable "license_2" {
+  description = "Second license key for Portworx Enterprise DR features"
   default = ""
 }

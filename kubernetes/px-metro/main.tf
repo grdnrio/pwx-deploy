@@ -147,9 +147,6 @@ resource "aws_security_group" "default" {
 
 
 
-
-
-
 resource "aws_instance" "etcd" {
   
   tags = {
@@ -522,13 +519,6 @@ resource "aws_elb" "k8s-app" {
   }
 }
 
-data "aws_kms_secret" "license-1" {
-  secret {
-    name    = "license-1"
-    payload = "AQICAHhPm98IaMqcRrPXr6g8K4Ij5n51POkxKvlZyHcZnNNqMQH5egLCWQouyFMZUoc7CxntAAAAhjCBgwYJKoZIhvcNAQcGoHYwdAIBADBvBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDAENUJ0mh3wYOtlS5QIBEIBC2tQqSazOv8POqKIdkbHYiRLzdjPa0+VOq0uz5VXk54I9wlutge4A4qLv12lyyZQEcMkLBmZ/Tcd9AkNz249nY9iO"
-  }
-}
-
 resource "null_resource" "storkctl" {
 
   connection {
@@ -565,9 +555,9 @@ while : ; do
     sleep 3
 done
 sleep 20
-ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT ${data.aws_kms_secret.license-1.license-1}
+ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT ${var.license_1}
 sleep 5
-ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT 44ce-190f-3273-485c-b7a6-730f-98fc-8535
+ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c1-1 pxctl license activate --ep UAT ${var.license_2}
 sleep 5
 kubectl apply -f /tmp/sched-policy.yaml
 sleep 60
