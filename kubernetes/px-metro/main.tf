@@ -508,11 +508,10 @@ resource "aws_elb" "k8s-app" {
     target              = "HTTP:30333/"
     interval            = 5
   }
-
+  instances = ["${aws_instance.worker-c1.0.id}", "${aws_instance.worker-c1.1.id}", "${aws_instance.worker-c1.2.id}", "${aws_instance.master-c1.id}", 
+                 "${aws_instance.worker-c2.0.id}", "${aws_instance.worker-c2.1.id}", "${aws_instance.worker-c2.2.id}", "${aws_instance.master-c2.id}"]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
-
-  instances                   = ["${aws_instance.worker-c1.*.id}", "${aws_instance.master-c1.id}", "${aws_instance.worker-c2.*.id}", "${aws_instance.master-c2.id}"]
 
   tags = {
     Name = "px-metro-demo-lb"
@@ -573,7 +572,7 @@ resource "null_resource" "appdeploy" {
     private_key = "${file(var.private_key_path)}"
     host = "${aws_instance.master-c1.public_ip}"
   }
-  triggers {
+  triggers = {
     build_number = "${timestamp()}"
   }
 
