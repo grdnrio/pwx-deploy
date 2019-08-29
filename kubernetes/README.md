@@ -1,5 +1,5 @@
 # Portworx - Kubernetes Deploy
-This is a Terraform script to one or more Kubernetes clussters, each with a running Portworx cluster on AWS. It pre-configures the following:
+This is a Terraform script to one or more Kubernetes clusters, each with a running Portworx cluster on AWS. It pre-configures the following:
 
 - Portworx latest version
 - Prometheus
@@ -27,7 +27,7 @@ key_name = "jgardiner"
 private_key_path = "/Users/joe/.ssh/id_rsa"
 
 ### Number of clusters
-clusters = ["1"]
+clusters = ["1", "n"]
 ```
 Note that the existing keypair name is a stored SSH keypair on AWS. Make sure it exists in your chosen region.
 
@@ -38,10 +38,10 @@ Note that the existing keypair name is a stored SSH keypair on AWS. Make sure it
 `terraform plan`
 
 5. Run the deployment
-`terraform apply -auto-approve`
+`terraform apply --auto-approve`
 
 ## Environment
 - you can ssh between machines using the hosts in the hosts file `/etc/hosts`.
 - kube config is set on the masters, no sudo required
 - storkctl is setup on the masters
-- there's a repo of manifests pulled onto each master
+- there's a repo of demo app manifests pulled onto each master
