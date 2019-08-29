@@ -11,8 +11,9 @@ Make sure you have your AWS credentials set and an SSH key-pair in the required 
 
 ## Demos
 These are the following demo environments deployable from this repo.
-1. 2 x Kubernetes with cluster pairing established - [kubernetes](kubernetes)
-2.
-3.
-4.
-5.
+1. 2 x Kubernetes with cluster pairing established - [kubernetes](kubernetes) (you can confiure to deploy one cluster - check the Readme)
+This envionrment is suitable for a standard Kuberntes demo.
+2. Single OpenShift 3.11 with Portworx pre-installed and the dashboard / service catalogue [OpenShift](openshift)
+3. Single Rancger cluster - Portworx is not pre-installed. [Rancher](rancher)
+4. Single Swarm cluster with Portworx pre-installed [Docker Swarm](swarm)
+5. Portworx Metro - 2 K8s clusters with a single Portworx stretch [PX Metro](kubernetes/px-metro)
