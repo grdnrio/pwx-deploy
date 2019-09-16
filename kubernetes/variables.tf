@@ -10,17 +10,17 @@
 ### Region
 variable "aws_region" {
   description = "The region to deploy the kubernetes clusters"
-  default=""
+  default="eu-west-2"
 }
 
 variable "key_name" {
   description = "Key pair name to use for SSH"
-  default = ""
+  default = "dwelc"
 }
 
 variable "private_key_path" {
   description = "Path to private SSH key"
-  default = ""
+  default = "~/Documents/ssh-sessions/aws/keys/dwelc.pem"
 }
 
 variable "stork_version" {
