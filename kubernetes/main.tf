@@ -114,7 +114,7 @@ resource "aws_instance" "master" {
       "wait",
       "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
 
-      "sudo apt-get install -y kubeadm=${var.kube_version} kubelet=${var.kube_version} kubectl=${var.kube_version}",
+      "sudo apt-get install -y kubeadm=${var.kube_version}-00 kubelet=${var.kube_version}-00 kubectl=${var.kube_version}-00",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
       "wait",
@@ -195,7 +195,7 @@ resource "aws_instance" "worker" {
       "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
 
       "wait",
-      "sudo apt-get install -y kubeadm=${var.kube_version} kubelet=${var.kube_version} kubectl=${var.kube_version}",
+      "sudo apt-get install -y kubeadm=${var.kube_version}-00 kubelet=${var.kube_version}-00 kubectl=${var.kube_version}-00",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
       "sudo docker pull portworx/oci-monitor:${var.portworx_version} ; sudo docker pull openstorage/stork:${var.stork_version}; sudo docker pull portworx/px-enterprise:${var.portworx_version}",
