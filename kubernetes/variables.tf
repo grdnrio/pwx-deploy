@@ -32,3 +32,8 @@ variable "storkctl_version" {
   description = "Version of storkctl to use"
   default = "latest"
 }
+
+variable "kube_version" {
+  description = "Version of storkctl to use"
+  default = "1.15.3"
+}
