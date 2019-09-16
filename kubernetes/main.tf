@@ -114,7 +114,7 @@ resource "aws_instance" "master" {
       "wait",
       "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
 
-      "sudo apt-get install -y kubeadm",
+      "sudo apt-get install -y kubeadm=${var.kube_version} kubelet=${var.kube_version} kubectl=${var.kube_version}",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
       "wait",
@@ -132,7 +132,7 @@ resource "aws_instance" "master" {
       "kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/prometheus-operator-crd/servicemonitor.crd.yaml",
       "sleep 30",
       "kubectl create secret generic alertmanager-portworx --from-file=/tmp/portworx-pxc-alertmanager.yaml -n kube-system",
-      "kubectl apply -f 'https://install.portworx.com/2.0.2?mc=false&kbver=1.13.3&b=true&c=px-demo-${count.index + 1}&stork=true&lh=true&mon=true&st=k8s'",
+      "kubectl apply -f 'https://install.portworx.com/2.0.2?mc=false&kbver=${var.kube_version}&b=true&c=px-demo-${count.index + 1}&stork=true&lh=true&mon=true&st=k8s'",
       "kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml",
       
       # Stork binary installation
@@ -195,7 +195,7 @@ resource "aws_instance" "worker" {
       "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
 
       "wait",
-      "sudo apt-get install -y kubeadm",
+      "sudo apt-get install -y kubeadm=${var.kube_version} kubelet=${var.kube_version} kubectl=${var.kube_version}",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
       "sudo docker pull portworx/oci-monitor:2.0.1 ; sudo docker pull openstorage/stork:${var.stork_version}; sudo docker pull portworx/px-enterprise:2.0.1",
