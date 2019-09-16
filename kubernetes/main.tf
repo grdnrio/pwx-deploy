@@ -229,6 +229,7 @@ resource "null_resource" "appdeploy" {
       "kubectl apply -f /tmp/apps/wordpress-db.yaml",
       "kubectl apply -f /tmp/apps/wordpress-deployment.yaml"
       #"kubectl apply -f /tmp/apps/jenkins-deployment.yaml"
+      #"kubectl apply -f /tmp/apps/minio-deployment.yaml"
     ] 
   }
 }
