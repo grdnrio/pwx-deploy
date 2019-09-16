@@ -22,3 +22,13 @@ variable "private_key_path" {
   description = "Path to private SSH key"
   default = ""
 }
+
+variable "stork_version" {
+  description = "Version of Stork to use"
+  default = "latest"
+}
+
+variable "storkctl_version" {
+  description = "Version of storkctl to use"
+  default = "latest"
+}

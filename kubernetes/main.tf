@@ -136,7 +136,7 @@ resource "aws_instance" "master" {
       "kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml",
       
       # Stork binary installation
-      "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/2.0.0/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
+      "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/${var.storkctl_version}/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
 
     ]
   }
@@ -198,7 +198,7 @@ resource "aws_instance" "worker" {
       "sudo apt-get install -y kubeadm",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
-      "sudo docker pull portworx/oci-monitor:2.0.1 ; sudo docker pull openstorage/stork:2.0.1 ; sudo docker pull portworx/px-enterprise:2.0.1",
+      "sudo docker pull portworx/oci-monitor:2.0.1 ; sudo docker pull openstorage/stork:${var.stork_version}; sudo docker pull portworx/px-enterprise:2.0.1",
       "sudo kubeadm join 10.0.1.${var.clusters[count.index % length(var.clusters)]}0:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification --node-name ${self.tags.Name}"
     ]
   }
