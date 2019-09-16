@@ -250,7 +250,12 @@ resource "null_resource" "storkctl" {
   provisioner "remote-exec" {
     inline = [
 <<EOF
-if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
+until ssh -oStrictHostKeyChecking=no worker-c2-1 pxctl status | grep 'PX is operational'
+do
+    echo "Waiting for PX Cluster to come online...."
+    sleep 10
+done
+if ssh -oStrictHostKeyChecking=no worker-c2-1 kubectl > /dev/null ; then
   while : ; do
     token=$(ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d " ")
     echo $token | grep -Eq '.{128}'
