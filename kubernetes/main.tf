@@ -114,7 +114,7 @@ resource "aws_instance" "master" {
       "wait",
       "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
 
-      "sudo apt-get install -y kubeadm",
+      "sudo apt-get install -y kubeadm=${var.kube_version}-00 kubelet=${var.kube_version}-00 kubectl=${var.kube_version}-00",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
       "wait",
@@ -132,11 +132,11 @@ resource "aws_instance" "master" {
       "kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/prometheus-operator-crd/servicemonitor.crd.yaml",
       "sleep 30",
       "kubectl create secret generic alertmanager-portworx --from-file=/tmp/portworx-pxc-alertmanager.yaml -n kube-system",
-      "kubectl apply -f 'https://install.portworx.com/2.0.2?mc=false&kbver=1.13.3&b=true&c=px-demo-${count.index + 1}&stork=true&lh=true&mon=true&st=k8s'",
+      "kubectl apply -f 'https://install.portworx.com/${var.portworx_version}?mc=false&kbver=${var.kube_version}&b=true&c=px-demo-${count.index + 1}&stork=true&lh=true&mon=true&st=k8s'",
       "kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml",
       
       # Stork binary installation
-      "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/2.0.0/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
+      "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/${var.storkctl_version}/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
 
     ]
   }
@@ -195,10 +195,10 @@ resource "aws_instance" "worker" {
       "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
 
       "wait",
-      "sudo apt-get install -y kubeadm",
+      "sudo apt-get install -y kubeadm=${var.kube_version}-00 kubelet=${var.kube_version}-00 kubectl=${var.kube_version}-00",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
-      "sudo docker pull portworx/oci-monitor:2.0.1 ; sudo docker pull openstorage/stork:2.0.1 ; sudo docker pull portworx/px-enterprise:2.0.1",
+      "sudo docker pull portworx/oci-monitor:${var.portworx_version} ; sudo docker pull openstorage/stork:${var.stork_version}; sudo docker pull portworx/px-enterprise:${var.portworx_version}",
       "sudo kubeadm join 10.0.1.${var.clusters[count.index % length(var.clusters)]}0:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification --node-name ${self.tags.Name}"
     ]
   }
@@ -229,6 +229,7 @@ resource "null_resource" "appdeploy" {
       "kubectl apply -f /tmp/apps/wordpress-db.yaml",
       "kubectl apply -f /tmp/apps/wordpress-deployment.yaml"
       #"kubectl apply -f /tmp/apps/jenkins-deployment.yaml"
+      #"kubectl apply -f /tmp/apps/minio-deployment.yaml"
     ] 
   }
 }
@@ -249,7 +250,12 @@ resource "null_resource" "storkctl" {
   provisioner "remote-exec" {
     inline = [
 <<EOF
-if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
+until ssh -oStrictHostKeyChecking=no worker-c2-1 pxctl status | grep 'PX is operational'
+do
+    echo "Waiting for PX Cluster to come online...."
+    sleep 10
+done
+if ssh -oStrictHostKeyChecking=no worker-c2-1 kubectl > /dev/null ; then
   while : ; do
     token=$(ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d " ")
     echo $token | grep -Eq '.{128}'
