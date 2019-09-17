@@ -15,12 +15,12 @@ variable "aws_region" {
 
 variable "key_name" {
   description = "Key pair name to use for SSH"
-  default = "dwelc"
+  default = ""
 }
 
 variable "private_key_path" {
   description = "Path to private SSH key"
-  default = "~/Documents/ssh-sessions/aws/keys/dwelc.pem"
+  default = ""
 }
 
 variable "stork_version" {
