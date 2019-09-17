@@ -28,6 +28,18 @@ private_key_path = "/Users/joe/.ssh/id_rsa"
 
 ### Number of clusters
 clusters = ["1", "n"]
+
+### Stork version
+stork_version = latest
+
+### Storkctl version
+storkctl_version = latest
+
+### Portworx version
+portworx_version = 2.1.2
+
+### Kubernetes version
+kube_version = 1.15.3
 ```
 Note that the existing keypair name is a stored SSH keypair on AWS. Make sure it exists in your chosen region.
 
