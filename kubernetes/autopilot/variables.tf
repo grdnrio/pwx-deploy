@@ -14,11 +14,11 @@ variable "gcp_region" {
 }
 variable "gcp_zone" {
   description = "The zone to deploy the kubernetes clusters"
-  default="europe-west2-c"
+  default= "europe-west2-c"
 }
 
 variable "gcp_project" {
-  description = "The zone to deploy the kubernetes clusters"
+  description = "The project to deploy the kubernetes clusters"
   default="premium-bearing-259414"
 }
 
