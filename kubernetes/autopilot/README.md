@@ -6,7 +6,7 @@ This is a Terraform script to one Kubernetes cluster, with Portworx, AutoPilot, 
 - Terraform 12.x or greater
 - gcloud CLI (tested with SDK 271.x)
 
-## Installed Componenets
+## Installed Components
 - Portworx Volumes
 - Prometheus
 - Lighthouse
