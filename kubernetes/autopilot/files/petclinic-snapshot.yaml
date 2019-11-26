@@ -1,8 +1,0 @@
-## Local snapshot spec
-apiVersion: volumesnapshot.external-storage.k8s.io/v1
-kind: VolumeSnapshot
-metadata:
-  name: petclinic-snapshot
-  namespace: default
-spec:
-  persistentVolumeClaimName: petclinic-db-mysql

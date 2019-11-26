@@ -271,6 +271,3 @@ output "master_access" {
     value = ["ssh ubuntu@${google_compute_instance.master.0.network_interface[0].access_config[0].nat_ip}"]
 }
 
-output "master_petclinic" {
-    value = ["http://${google_compute_instance.master.0.network_interface[0].access_config[0].nat_ip}:30333"]
-}
