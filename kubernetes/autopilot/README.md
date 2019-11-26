@@ -1,4 +1,4 @@
-# Portworx - Kubernetes Deploy
+# Portworx - AutPilot on GCP
 This is a Terraform script to one Kubernetes cluster, with Portworx, AutoPilot, AutoPilot Rules and a Postgres Benchmark deployment that will quickly consume space on its PV.
 
 ## Requirements
