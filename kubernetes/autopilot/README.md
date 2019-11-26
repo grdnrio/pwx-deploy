@@ -5,7 +5,8 @@ This is a Terraform script to one Kubernetes cluster, with Portworx, AutoPilot, 
 - Prometheus
 - Lighthouse
 - Grafana with dashboards
-- Storkctl configured 
+- Storkctl
+- AutoPilot 1.x
 
 You need to have Terraform installed and your GCP credentials set in your ssh agent or the public/private key referenced in the variables below.
 
