@@ -1,7 +1,13 @@
 # Portworx - Kubernetes Deploy
 This is a Terraform script to one Kubernetes cluster, with Portworx, AutoPilot, AutoPilot Rules and a Postgres Benchmark deployment that will quickly consume space on its PV.
 
-- Portworx 2.3 or greater required
+## Requirements
+- Portworx 2.3 or greater
+- Terraform 12.x or greater
+- gcloud CLI (tested with SDK 271.x)
+
+## Installed Componenets
+- Portworx Volumes
 - Prometheus
 - Lighthouse
 - Grafana with dashboards
