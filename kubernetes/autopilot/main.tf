@@ -266,37 +266,6 @@ resource "null_resource" "portworx_setup" {
     ] 
   }
 } 
-/*
-resource "null_resource" "appdeploy" {
-
-  connection {
-    user          = "ubuntu"
-    private_key   = file(var.private_key_path)
-    host          = google_compute_instance.master.0.network_interface[0].access_config[0].nat_ip
-  }
-  triggers = {
-    build_number  = "${timestamp()}"
-  }
-
-  depends_on      = [google_compute_instance.master, google_compute_instance.worker]
-
-  provisioner "remote-exec" {
-    inline = [
-      # Deploy demo app
-      "kubectl apply -f /tmp/apps/petclinic-db.yaml",
-      "kubectl apply -f /tmp/apps/petclinic-deployment.yaml",
-      "kubectl apply -f /tmp/apps/postgres-deployment.yaml",
-      "kubectl apply -f /tmp/apps/mongo-deployment.yaml",
-      "kubectl apply -f /tmp/apps/mysql-deployment.yaml",
-      "kubectl apply -f /tmp/apps/redis-deployment.yaml",
-      "kubectl apply -f /tmp/apps/wordpress-db.yaml",
-      "kubectl apply -f /tmp/apps/wordpress-deployment.yaml"
-      #"kubectl apply -f /tmp/apps/jenkins-deployment.yaml"
-      #"kubectl apply -f /tmp/apps/minio-deployment.yaml"
-    ] 
-  }
-}
-*/
 
 output "master_access" {
     value = ["ssh ubuntu@${google_compute_instance.master.0.network_interface[0].access_config[0].nat_ip}"]
