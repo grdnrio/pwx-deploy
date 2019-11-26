@@ -4,7 +4,7 @@
 ## on AWS
 ## 
 ## @year 2019
-## @author Joe Gardiner <joe@grdnr.io>
+## @author Dan Welch
 ##
 #############################################################
 ### Region
