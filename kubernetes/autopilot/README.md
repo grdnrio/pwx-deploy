@@ -78,6 +78,11 @@ Note that the existing keypair name is a stored SSH key in your GCP Project. Mak
 
 ## Environment
 - There is a deployment called 'pgbench' edit this deployment and increase the replicas to '1' to start filling the volumes
+- There are deployment options for CockroachDB
+    - `/tmp/cockroach-db-1node.yaml` - deploys 1 instance of CockroachDB with 3 PX replicas
+    - `/tmp/cockroach-db-3node.yaml` - deploys 3 instance of CockroachDB with their own volumes, 1 PX replica each
+    - `/tmp/ap-cockroach-rule.yaml` - deploys an AutoPilot rule to increase the volume size by 50% when the utilisation hits 50%
+    - `/tmp/cockroach-loadgen.sh` - starts filling the database
 - kube config is set on the masters, no sudo required
 - storkctl is setup on the masters
 - there's a repo of demo app manifests pulled onto each master
