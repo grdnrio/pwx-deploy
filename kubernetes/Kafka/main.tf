@@ -10,7 +10,7 @@
 
 # Specify the provider and access details
 provider "google" {
-  credentials = file("~/.gcp/premium-bearing-259414-70220e45e63c.json")
+  credentials = file(var.gcp_credentials)
   project     = var.gcp_project
   region      = var.gcp_region
   zone        = var.gcp_zone
@@ -62,6 +62,14 @@ resource "google_compute_disk" "data" {
   name  = "workerdisk-c${var.clusters[count.index % length(var.clusters)]}-${var.workers[count.index % length(var.workers)]}"
   size  = "30"
   type  = "pd-ssd"
+}
+
+resource "google_compute_disk" "data2" {
+  count = length(var.clusters) * length(var.workers)
+  zone  = var.gcp_zone
+  name  = "workerdisk2-c${var.clusters[count.index % length(var.clusters)]}-${var.workers[count.index % length(var.workers)]}"
+  size  = "30"
+  type  = "pd-standard"
 }
 
 resource "google_compute_instance" "master" {
@@ -181,6 +189,12 @@ resource "google_compute_instance" "worker" {
     mode        = "READ_WRITE"
   }
 
+  attached_disk {
+    source      = "workerdisk2-c${var.clusters[count.index % length(var.clusters)]}-${var.workers[count.index % length(var.workers)]}"
+    device_name = "sdd"
+    mode        = "READ_WRITE"
+  }
+
   network_interface {
     network       = google_compute_network.default.name
     subnetwork    = google_compute_subnetwork.default.name
@@ -257,13 +271,57 @@ resource "null_resource" "portworx_setup" {
       "kubectl apply -f 'https://install.portworx.com/${var.portworx_version}?mc=false&kbver=${var.kube_version}&b=true&c=px-demo-1&stork=true&lh=true&mon=true&st=k8s'",
       "kubectl apply -f /tmp/ap-configmap.yaml",
       "kubectl apply -f /tmp/ap-install.yaml",
-      "kubectl apply -f /tmp/postgres-deployment.yaml",
       "sleep 30",
-      "kubectl apply -f /tmp/ap-postgres-rule.yaml",
       # Stork binary installation
       "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/${var.storkctl_version}/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl"
-
     ] 
+  }
+}
+
+resource "null_resource" "label_pools" {
+
+  connection {
+    user          = "ubuntu"
+    private_key   = file(var.private_key_path)
+    host          = google_compute_instance.worker.0.network_interface[0].access_config[0].nat_ip
+  }
+  triggers = {
+    build_number  = "${timestamp()}"
+  }
+
+  depends_on      = [google_compute_instance.master, google_compute_instance.worker]
+
+
+provisioner "remote-exec" {
+    inline = [
+      "pxctl service pool update 0 --labels storage=kafka",
+      "pxctl service pool update 1 --labels storage=zookeeper"
+     ] 
+  }
+}
+
+resource "null_resource" "install_kafka" {
+
+  connection {
+    user          = "ubuntu"
+    private_key   = file(var.private_key_path)
+    host          = google_compute_instance.worker.0.network_interface[0].access_config[0].nat_ip
+  }
+  triggers = {
+    build_number  = "${timestamp()}"
+  }
+
+  depends_on      = [google_compute_instance.master, google_compute_instance.worker]
+
+
+  provisioner "remote-exec" {
+    inline = [
+      "kubectl create namespace kz",
+      "wget https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.14.0/strimzi-0.14.0.zip",
+      "sudo apt-get install -y unzip && unzip strimzi-0.14.0.zip",
+      "cd /strimzi && sed -i 's/namespace: .*/namespace: kz/' install/cluster-operator/*RoleBinding*.yaml",
+      
+     ] 
   }
 } 
 
