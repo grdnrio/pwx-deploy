@@ -261,8 +261,11 @@ resource "null_resource" "portworx_setup" {
       "sleep 30",
       "kubectl apply -f /tmp/ap-postgres-rule.yaml",
       # Stork binary installation
-      "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/${var.storkctl_version}/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl"
-
+      "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/${var.storkctl_version}/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
+      # Install CockroachDB Instance
+      "kubectl apply -f /tmp/cockroach-db-1node.yaml",
+      "kubectl create -f https://raw.githubusercontent.com/cockroachdb/cockroach/master/cloud/kubernetes/cluster-init.yaml",
+      "chmod 775 /tmp/cockroach-loadgen.sh"
     ] 
   }
 } 
