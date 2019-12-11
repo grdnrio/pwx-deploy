@@ -257,6 +257,7 @@ resource "null_resource" "portworx_setup" {
       "kubectl apply -f 'https://install.portworx.com/${var.portworx_version}?mc=false&kbver=${var.kube_version}&b=true&c=px-demo-1&stork=true&lh=true&mon=true&st=k8s'",
       "kubectl apply -f /tmp/ap-configmap.yaml",
       "kubectl apply -f /tmp/ap-install.yaml",
+      #Install Postgres Deployment
       "kubectl apply -f /tmp/postgres-deployment.yaml",
       "sleep 30",
       "kubectl apply -f /tmp/ap-postgres-rule.yaml",
@@ -265,7 +266,9 @@ resource "null_resource" "portworx_setup" {
       # Install CockroachDB Instance
       "kubectl apply -f /tmp/cockroach-db-1node.yaml",
       "kubectl create -f https://raw.githubusercontent.com/cockroachdb/cockroach/master/cloud/kubernetes/cluster-init.yaml",
-      "chmod 775 /tmp/cockroach-loadgen.sh"
+      "chmod 775 /tmp/cockroach-loadgen.sh",
+      "sleep 60",
+      "kubectl port-forward cockroachdb-0 8080"
     ] 
   }
 } 
