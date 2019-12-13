@@ -3,7 +3,7 @@ This repo provides a number of Terraform templates for deploying various contain
 
 ## Pre-requisites
 You need the following packages on your workstation
-- Terraform
+- Terraform >= 0.12
 - aws-cli
 - Ansible
 
