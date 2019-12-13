@@ -10,11 +10,11 @@
 
 # Specify the provider and access details
 provider "aws" {
-  region = "${var.aws_region}"
+  region = var.aws_region
 }
 
 variable "join_token" {
-  type= "string"
+  type    = string
   default = "abcdef.1234567890abcdef"
 }
 
@@ -43,28 +43,37 @@ module "aws_networking" {
 }
 
 resource "aws_instance" "master" {
-  
   tags = {
-    Name = "master-${ count.index + 1 }"
+    Name = "master-${count.index + 1}"
   }
 
   connection {
-    user = "centos"
-    private_key = "${file(var.private_key_path)}"
+    host        = coalesce(self.public_ip, self.private_ip)
+    type        = "ssh"
+    user        = "centos"
+    private_key = file(var.private_key_path)
   }
 
   associate_public_ip_address = true
-  private_ip = "10.0.1.10"
+  private_ip                  = "10.0.1.10"
 
   instance_type = "t2.large"
-  ami = "${data.aws_ami.centos.id}"
+  ami           = data.aws_ami.centos.id
 
-  key_name = "${var.key_name}"
+  key_name = var.key_name
 
-  vpc_security_group_ids = ["${module.aws_networking.security_group}"]
-  subnet_id = "${module.aws_networking.subnet}"
+  # TF-UPGRADE-TODO: In Terraform v0.10 and earlier, it was sometimes necessary to
+  # force an interpolation expression to be interpreted as a list by wrapping it
+  # in an extra set of list brackets. That form was supported for compatibility in
+  # v0.11, but is no longer supported in Terraform v0.12.
+  #
+  # If the expression in the following list itself returns a list, remove the
+  # brackets to avoid interpretation as a list of lists. If the expression
+  # returns a single list item then leave it as-is and remove this TODO comment.
+  vpc_security_group_ids = [module.aws_networking.security_group]
+  subnet_id              = module.aws_networking.subnet
 
-  root_block_device = {
+  root_block_device {
     volume_type = "gp2"
     volume_size = "100"
   }
@@ -74,42 +83,52 @@ resource "aws_instance" "master" {
     destination = "/tmp"
   }
   provisioner "file" {
-    source      = "${var.private_key_path}"
+    source      = var.private_key_path
     destination = "/home/centos/.ssh/id_rsa"
   }
-   provisioner "remote-exec" {
+  provisioner "remote-exec" {
     inline = [
       "sudo hostnamectl set-hostname ${self.tags.Name}",
       "sudo chmod 600 /home/centos/.ssh/id_rsa",
       "sudo cat /tmp/files/hosts | sudo tee --append /etc/hosts",
       "sudo curl -fsSL https://get.docker.com/ | sh",
       "sudo systemctl start docker",
-      "sudo curl https://github.com/rancher/rke/releases/download/v0.1.17/rke_linux-amd64 -o /usr/bin/rke"
+      "sudo curl https://github.com/rancher/rke/releases/download/v0.1.17/rke_linux-amd64 -o /usr/bin/rke",
     ]
   }
 }
 
 resource "aws_instance" "worker" {
   connection {
-    user = "centos"
-    private_key = "${file(var.private_key_path)}"
+    host        = coalesce(self.public_ip, self.private_ip)
+    type        = "ssh"
+    user        = "centos"
+    private_key = file(var.private_key_path)
   }
-  depends_on = ["aws_instance.master"]
-  count = "3"
+  depends_on    = [aws_instance.master]
+  count         = "3"
   instance_type = "t2.medium"
   tags = {
-    Name = "worker-${ count.index +1 }"
+    Name = "worker-${count.index + 1}"
   }
-  private_ip = "10.0.1.1${ count.index +1 }"
-  ami = "${data.aws_ami.centos.id}"
-  key_name = "${var.key_name}"
-  vpc_security_group_ids = ["${module.aws_networking.security_group}"]
-  subnet_id = "${module.aws_networking.subnet}"
-  root_block_device = {
+  private_ip = "10.0.1.1${count.index + 1}"
+  ami        = data.aws_ami.centos.id
+  key_name   = var.key_name
+  # TF-UPGRADE-TODO: In Terraform v0.10 and earlier, it was sometimes necessary to
+  # force an interpolation expression to be interpreted as a list by wrapping it
+  # in an extra set of list brackets. That form was supported for compatibility in
+  # v0.11, but is no longer supported in Terraform v0.12.
+  #
+  # If the expression in the following list itself returns a list, remove the
+  # brackets to avoid interpretation as a list of lists. If the expression
+  # returns a single list item then leave it as-is and remove this TODO comment.
+  vpc_security_group_ids = [module.aws_networking.security_group]
+  subnet_id              = module.aws_networking.subnet
+  root_block_device {
     volume_type = "gp2"
     volume_size = "80"
   }
-  ebs_block_device = {
+  ebs_block_device {
     device_name = "/dev/sdd"
     volume_type = "gp2"
     volume_size = "50"
@@ -119,67 +138,62 @@ resource "aws_instance" "worker" {
     destination = "/tmp"
   }
   provisioner "file" {
-    source      = "${var.private_key_path}"
+    source      = var.private_key_path
     destination = "/home/centos/.ssh/id_rsa"
   }
-   provisioner "remote-exec" {
+  provisioner "remote-exec" {
     inline = [
       "sudo hostnamectl set-hostname ${self.tags.Name}",
       "sudo chmod 600 /home/centos/.ssh/id_rsa",
       "sudo cat /tmp/files/hosts | sudo tee --append /etc/hosts",
       "sudo curl -fsSL https://get.docker.com/ | sh",
-      "sudo systemctl start docker"
+      "sudo systemctl start docker",
     ]
   }
 }
 
 data "template_file" "cluster" {
-  template = "${file("files/cluster.tpl")}"
-  depends_on = ["aws_instance.worker"]
-  vars {
-    master_public_ip = "${aws_instance.master.public_ip}"
-    worker1_public_ip = "${aws_instance.worker.0.public_ip}"
-    worker2_public_ip = "${aws_instance.worker.1.public_ip}"
-    worker3_public_ip = "${aws_instance.worker.2.public_ip}"
+  template   = file("files/cluster.tpl")
+  depends_on = [aws_instance.worker]
+  vars = {
+    master_public_ip  = aws_instance.master.public_ip
+    worker1_public_ip = aws_instance.worker[0].public_ip
+    worker2_public_ip = aws_instance.worker[1].public_ip
+    worker3_public_ip = aws_instance.worker[2].public_ip
   }
 }
 
 resource "null_resource" "cluster-file" {
-  triggers {
-    template_rendered = "${data.template_file.cluster.rendered}"
+  triggers = {
+    template_rendered = data.template_file.cluster.rendered
   }
   connection {
-    user = "centos"
-    private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master.public_ip}"
+    user        = "centos"
+    private_key = file(var.private_key_path)
+    host        = aws_instance.master.public_ip
   }
   provisioner "file" {
-    content      = "${data.template_file.cluster.rendered}"
+    content     = data.template_file.cluster.rendered
     destination = "/tmp/rancher-cluster.yaml"
   }
 }
 
 resource "null_resource" "deploy" {
-  triggers {
-    version = "${timestamp()}"
+  triggers = {
+    version = timestamp()
   }
-  depends_on = ["null_resource.cluster-file"]
+  depends_on = [null_resource.cluster-file]
   connection {
-    user = "centos"
-    private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master.public_ip}"
+    user        = "centos"
+    private_key = file(var.private_key_path)
+    host        = aws_instance.master.public_ip
   }
   provisioner "remote-exec" {
     inline = [
-      "rke up --config /tmp/rancher-cluster.yaml"
+      "rke up --config /tmp/rancher-cluster.yaml",
     ]
   }
 }
-
-
-
-
-
 
 # resource "null_resource" "rancher_install" {
 
@@ -205,16 +219,15 @@ resource "null_resource" "deploy" {
 #   }
 # }
 
-
-
 output "master1_access" {
-    value = ["ssh ubuntu@${aws_instance.master.0.public_ip}"]
+  value = ["ssh ubuntu@${aws_instance.master.public_ip}"]
 }
 
 output "rancher_dashboard" {
-    value = ["http://rancher.${aws_instance.master.public_ip}.xip.io"]
+  value = ["http://rancher.${aws_instance.master.public_ip}.xip.io"]
 }
 
 output "grafana_url" {
-    value = ["http://${aws_instance.worker.0.public_ip}:31522"]
+  value = ["http://${aws_instance.worker[0].public_ip}:31522"]
 }
+
