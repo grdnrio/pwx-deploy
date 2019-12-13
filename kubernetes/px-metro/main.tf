@@ -8,7 +8,6 @@
 ##
 #############################################################
 
-
 # terraform {
 #   backend "remote" {
 #     hostname = "app.terraform.io"
@@ -20,31 +19,29 @@
 #   }
 # }
 
-
 # Specify the provider and access details
 provider "aws" {
-  region = "${var.aws_region}"
+  region = var.aws_region
 }
 
 variable "join_token" {
-  type= "string"
+  type    = string
   default = "abcdef.1234567890abcdef"
 }
 
 # Load the latest Ubuntu AMI
 data "aws_ami" "default" {
   most_recent = true
-    filter {
-        name   = "name"
-        values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
-    }
-    filter {
-        name   = "virtualization-type"
-        values = ["hvm"]
-    }
-    owners = ["099720109477"] # Canonical
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  owners = ["099720109477"] # Canonical
 }
-
 
 ### NETWORKING
 resource "aws_vpc" "default" {
@@ -53,33 +50,33 @@ resource "aws_vpc" "default" {
 
 # Create an internet gateway to give our subnet access to the outside world
 resource "aws_internet_gateway" "default" {
-  vpc_id = "${aws_vpc.default.id}"
+  vpc_id = aws_vpc.default.id
 }
 
 # Grant the VPC internet access on its main route table
 resource "aws_route" "internet_access" {
-  route_table_id         = "${aws_vpc.default.main_route_table_id}"
+  route_table_id         = aws_vpc.default.main_route_table_id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = "${aws_internet_gateway.default.id}"
+  gateway_id             = aws_internet_gateway.default.id
 }
 
 # Create a subnet to launch our instances into
 resource "aws_subnet" "eu-west-c1" {
-  vpc_id                  = "${aws_vpc.default.id}"
+  vpc_id                  = aws_vpc.default.id
   cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = true
   availability_zone       = "eu-west-2a"
 }
 
 resource "aws_subnet" "eu-west-c2" {
-  vpc_id                  = "${aws_vpc.default.id}"
+  vpc_id                  = aws_vpc.default.id
   cidr_block              = "10.0.2.0/24"
   map_public_ip_on_launch = true
   availability_zone       = "eu-west-2c"
 }
 
 resource "aws_subnet" "etcd" {
-  vpc_id                  = "${aws_vpc.default.id}"
+  vpc_id                  = aws_vpc.default.id
   cidr_block              = "10.0.3.0/24"
   map_public_ip_on_launch = true
 }
@@ -89,7 +86,7 @@ resource "aws_subnet" "etcd" {
 resource "aws_security_group" "default" {
   name        = "terraform_sg_default"
   description = "Used in the terraform"
-  vpc_id      = "${aws_vpc.default.id}"
+  vpc_id      = aws_vpc.default.id
 
   ingress {
     from_port   = 22
@@ -128,10 +125,10 @@ resource "aws_security_group" "default" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    self = true
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    self      = true
   }
 
   # outbound internet access
@@ -145,29 +142,27 @@ resource "aws_security_group" "default" {
 
 ### END NETWORKING
 
-
-
 resource "aws_instance" "etcd" {
-  
   tags = {
     Name = "etcd"
   }
 
   connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${self.public_ip}"
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(var.private_key_path)
+    host        = self.public_ip
   }
 
   associate_public_ip_address = true
-  private_ip = "10.0.3.10"
+  private_ip                  = "10.0.3.10"
 
   instance_type = "t2.medium"
-  ami = "${data.aws_ami.default.id}"
-  key_name = "${var.key_name}"
+  ami           = data.aws_ami.default.id
+  key_name      = var.key_name
 
-  vpc_security_group_ids = ["${aws_security_group.default.id}"]
-  subnet_id = "${aws_subnet.etcd.id}"
+  vpc_security_group_ids = [aws_security_group.default.id]
+  subnet_id              = aws_subnet.etcd.id
 
   root_block_device {
     volume_type = "gp2"
@@ -179,10 +174,10 @@ resource "aws_instance" "etcd" {
     destination = "/tmp"
   }
   provisioner "file" {
-    source      = "${var.private_key_path}"
+    source      = var.private_key_path
     destination = "/home/ubuntu/.ssh/id_rsa"
   }
-   provisioner "remote-exec" {
+  provisioner "remote-exec" {
     inline = [
       "sudo hostnamectl set-hostname ${self.tags.Name}",
       "sudo chmod 600 /home/ubuntu/.ssh/id_rsa",
@@ -192,7 +187,7 @@ resource "aws_instance" "etcd" {
       "sudo cp /tmp/etcd.service /lib/systemd/system/etcd.service",
       "sudo systemctl enable etcd",
       "sudo systemctl restart etcd",
-      "wait"      
+      "wait",
     ]
   }
 }
@@ -203,21 +198,22 @@ resource "aws_instance" "master-c1" {
   }
 
   connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${self.public_ip}"
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(var.private_key_path)
+    host        = self.public_ip
   }
 
-  availability_zone = "eu-west-2a"
+  availability_zone           = "eu-west-2a"
   associate_public_ip_address = true
-  private_ip = "10.0.1.10"
+  private_ip                  = "10.0.1.10"
 
   instance_type = "t2.medium"
-  ami = "${data.aws_ami.default.id}"
+  ami           = data.aws_ami.default.id
 
-  key_name = "${var.key_name}"
-  vpc_security_group_ids = ["${aws_security_group.default.id}"]
-  subnet_id = "${aws_subnet.eu-west-c1.id}"
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.default.id]
+  subnet_id              = aws_subnet.eu-west-c1.id
 
   root_block_device {
     volume_type = "gp2"
@@ -233,10 +229,10 @@ resource "aws_instance" "master-c1" {
     destination = "/tmp/apps"
   }
   provisioner "file" {
-    source      = "${var.private_key_path}"
+    source      = var.private_key_path
     destination = "/home/ubuntu/.ssh/id_rsa"
   }
-   provisioner "remote-exec" {
+  provisioner "remote-exec" {
     inline = [
       "sudo hostnamectl set-hostname ${self.tags.Name}",
       "sudo chmod 600 /home/ubuntu/.ssh/id_rsa",
@@ -244,8 +240,6 @@ resource "aws_instance" "master-c1" {
       "git clone https://github.com/grdnrio/sa-toolkit.git",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      
-      # Install Docker
       "sudo apt-get remove docker docker-engine docker.io containerd runc",
       "sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common",
       "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
@@ -253,7 +247,6 @@ resource "aws_instance" "master-c1" {
       "until find /etc/apt/ -name *.list | xargs cat | grep  ^[[:space:]]*deb | grep docker; do sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"; sleep 2; done",
       "wait",
       "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
-
       "sudo apt-get install -y kubeadm",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
@@ -278,9 +271,7 @@ resource "aws_instance" "master-c1" {
       "sleep 10",
       "sudo apt-get update && sudo apt-get install -y jq && hash -r",
       "sudo bash /tmp/patch.sh cluster-1",
-      # Stork binary installation
       "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/latest/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
-
     ]
   }
 }
@@ -291,21 +282,22 @@ resource "aws_instance" "master-c2" {
   }
 
   connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${self.public_ip}"
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(var.private_key_path)
+    host        = self.public_ip
   }
 
-  availability_zone = "eu-west-2c"
+  availability_zone           = "eu-west-2c"
   associate_public_ip_address = true
-  private_ip = "10.0.2.10"
+  private_ip                  = "10.0.2.10"
 
   instance_type = "t2.medium"
-  ami = "${data.aws_ami.default.id}"
+  ami           = data.aws_ami.default.id
 
-  key_name = "${var.key_name}"
-  vpc_security_group_ids = ["${aws_security_group.default.id}"]
-  subnet_id = "${aws_subnet.eu-west-c2.id}"
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.default.id]
+  subnet_id              = aws_subnet.eu-west-c2.id
 
   root_block_device {
     volume_type = "gp2"
@@ -321,10 +313,10 @@ resource "aws_instance" "master-c2" {
     destination = "/tmp/apps"
   }
   provisioner "file" {
-    source      = "${var.private_key_path}"
+    source      = var.private_key_path
     destination = "/home/ubuntu/.ssh/id_rsa"
   }
-   provisioner "remote-exec" {
+  provisioner "remote-exec" {
     inline = [
       "sudo hostnamectl set-hostname ${self.tags.Name}",
       "sudo chmod 600 /home/ubuntu/.ssh/id_rsa",
@@ -332,8 +324,6 @@ resource "aws_instance" "master-c2" {
       "git clone https://github.com/grdnrio/sa-toolkit.git",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      
-      # Install Docker
       "sudo apt-get remove docker docker-engine docker.io containerd runc",
       "sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common",
       "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
@@ -341,7 +331,6 @@ resource "aws_instance" "master-c2" {
       "until find /etc/apt/ -name *.list | xargs cat | grep  ^[[:space:]]*deb | grep docker; do sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"; sleep 2; done",
       "wait",
       "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
-
       "sudo apt-get install -y kubeadm",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
@@ -359,31 +348,30 @@ resource "aws_instance" "master-c2" {
       "sleep 10",
       "sudo apt-get update && sudo apt-get install -y jq && hash -r",
       "sudo bash /tmp/patch.sh cluster-2",
-      # Stork binary installation
       "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/latest/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
-
     ]
   }
 }
 
 resource "aws_instance" "worker-c1" {
   connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${self.public_ip}"
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(var.private_key_path)
+    host        = self.public_ip
   }
-  depends_on = ["aws_instance.master-c1"]
-  count = "3"
+  depends_on    = [aws_instance.master-c1]
+  count         = "3"
   instance_type = "t2.medium"
   tags = {
-    Name = "worker-c1-${ count.index +1 }"
+    Name = "worker-c1-${count.index + 1}"
   }
-  availability_zone = "eu-west-2a"
-  private_ip = "10.0.1.1${ count.index +1 }"
-  ami = "${data.aws_ami.default.id}"
-  key_name = "${var.key_name}"
-  vpc_security_group_ids = ["${aws_security_group.default.id}"]
-  subnet_id = "${aws_subnet.eu-west-c1.id}"
+  availability_zone      = "eu-west-2a"
+  private_ip             = "10.0.1.1${count.index + 1}"
+  ami                    = data.aws_ami.default.id
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.default.id]
+  subnet_id              = aws_subnet.eu-west-c1.id
   root_block_device {
     volume_type = "gp2"
     volume_size = "20"
@@ -398,7 +386,7 @@ resource "aws_instance" "worker-c1" {
     destination = "/tmp/hosts"
   }
   provisioner "file" {
-    source      = "${var.private_key_path}"
+    source      = var.private_key_path
     destination = "/home/ubuntu/.ssh/id_rsa"
   }
 
@@ -409,8 +397,6 @@ resource "aws_instance" "worker-c1" {
       "sudo cat /tmp/hosts | sudo tee --append /etc/hosts",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      
-      # Install Docker
       "sudo apt-get remove docker docker-engine docker.io containerd runc",
       "sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common",
       "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
@@ -418,34 +404,34 @@ resource "aws_instance" "worker-c1" {
       "until find /etc/apt/ -name *.list | xargs cat | grep  ^[[:space:]]*deb | grep docker; do sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"; sleep 2; done",
       "wait",
       "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
-
       "wait",
       "sudo apt-get install -y kubeadm",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
-      "sudo kubeadm join 10.0.1.10:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification --node-name ${self.tags.Name}"
+      "sudo kubeadm join 10.0.1.10:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification --node-name ${self.tags.Name}",
     ]
   }
 }
 
 resource "aws_instance" "worker-c2" {
   connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${self.public_ip}"
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(var.private_key_path)
+    host        = self.public_ip
   }
-  depends_on = ["aws_instance.master-c2"]
-  count = "3"
+  depends_on    = [aws_instance.master-c2]
+  count         = "3"
   instance_type = "t2.medium"
   tags = {
-    Name = "worker-c2-${ count.index +1 }"
+    Name = "worker-c2-${count.index + 1}"
   }
-  availability_zone = "eu-west-2c"
-  private_ip = "10.0.2.1${ count.index +1 }"
-  ami = "${data.aws_ami.default.id}"
-  key_name = "${var.key_name}"
-  vpc_security_group_ids = ["${aws_security_group.default.id}"]
-  subnet_id = "${aws_subnet.eu-west-c2.id}"
+  availability_zone      = "eu-west-2c"
+  private_ip             = "10.0.2.1${count.index + 1}"
+  ami                    = data.aws_ami.default.id
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.default.id]
+  subnet_id              = aws_subnet.eu-west-c2.id
   root_block_device {
     volume_type = "gp2"
     volume_size = "20"
@@ -460,7 +446,7 @@ resource "aws_instance" "worker-c2" {
     destination = "/tmp/hosts"
   }
   provisioner "file" {
-    source      = "${var.private_key_path}"
+    source      = var.private_key_path
     destination = "/home/ubuntu/.ssh/id_rsa"
   }
 
@@ -471,8 +457,6 @@ resource "aws_instance" "worker-c2" {
       "sudo cat /tmp/hosts | sudo tee --append /etc/hosts",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      
-      # Install Docker
       "sudo apt-get remove docker docker-engine docker.io containerd runc",
       "sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common",
       "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
@@ -480,20 +464,19 @@ resource "aws_instance" "worker-c2" {
       "until find /etc/apt/ -name *.list | xargs cat | grep  ^[[:space:]]*deb | grep docker; do sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"; sleep 2; done",
       "wait",
       "until docker; do sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sleep 2; done",
-
       "wait",
       "sudo apt-get install -y kubeadm",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
-      "sudo kubeadm join 10.0.2.10:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification --node-name ${self.tags.Name}"
+      "sudo kubeadm join 10.0.2.10:6443 --token ${var.join_token} --discovery-token-unsafe-skip-ca-verification --node-name ${self.tags.Name}",
     ]
   }
 }
 
 resource "aws_elb" "k8s-app" {
-  name = "px-metro-demo"
-  subnets = ["${aws_subnet.eu-west-c1.id}", "${aws_subnet.eu-west-c2.id}"]
-  security_groups = ["${aws_security_group.default.id}"]
+  name            = "px-metro-demo"
+  subnets         = [aws_subnet.eu-west-c1.id, aws_subnet.eu-west-c2.id]
+  security_groups = [aws_security_group.default.id]
   listener {
     instance_port     = 30333
     instance_protocol = "http"
@@ -508,10 +491,18 @@ resource "aws_elb" "k8s-app" {
     target              = "HTTP:30333/"
     interval            = 5
   }
-  instances = ["${aws_instance.worker-c1.0.id}", "${aws_instance.worker-c1.1.id}", "${aws_instance.worker-c1.2.id}", "${aws_instance.master-c1.id}", 
-                 "${aws_instance.worker-c2.0.id}", "${aws_instance.worker-c2.1.id}", "${aws_instance.worker-c2.2.id}", "${aws_instance.master-c2.id}"]
-  cross_zone_load_balancing   = true
-  idle_timeout                = 400
+  instances = [
+    aws_instance.worker-c1[0].id,
+    aws_instance.worker-c1[1].id,
+    aws_instance.worker-c1[2].id,
+    aws_instance.master-c1.id,
+    aws_instance.worker-c2[0].id,
+    aws_instance.worker-c2[1].id,
+    aws_instance.worker-c2[2].id,
+    aws_instance.master-c2.id,
+  ]
+  cross_zone_load_balancing = true
+  idle_timeout              = 400
 
   tags = {
     Name = "px-metro-demo-lb"
@@ -519,21 +510,23 @@ resource "aws_elb" "k8s-app" {
 }
 
 resource "null_resource" "storkctl" {
-
   connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master-c1.public_ip}"
+    user        = "ubuntu"
+    private_key = file(var.private_key_path)
+    host        = aws_instance.master-c1.public_ip
   }
   triggers = {
-    build_number = "${timestamp()}"
+    build_number = timestamp()
   }
 
-  depends_on = ["aws_instance.master-c2", "aws_instance.worker-c2"]
+  depends_on = [
+    aws_instance.master-c2,
+    aws_instance.worker-c2,
+  ]
 
   provisioner "remote-exec" {
     inline = [
-<<EOF
+      <<EOF
 if ssh -oStrictHostKeyChecking=no worker-c2-1 bash -c 'kubectl' ; then
   while : ; do
     token=$(ssh -oConnectTimeout=1 -oStrictHostKeyChecking=no worker-c2-1 pxctl cluster token show | cut -f 3 -d " ")
@@ -561,33 +554,31 @@ sleep 5
 kubectl apply -f /tmp/sched-policy.yaml
 sleep 60
 EOF
+      ,
     ]
   }
 }
 
 resource "null_resource" "appdeploy" {
-
   connection {
-    user = "ubuntu"
-    private_key = "${file(var.private_key_path)}"
-    host = "${aws_instance.master-c1.public_ip}"
+    user        = "ubuntu"
+    private_key = file(var.private_key_path)
+    host        = aws_instance.master-c1.public_ip
   }
   triggers = {
-    build_number = "${timestamp()}"
+    build_number = timestamp()
   }
 
-  depends_on = ["null_resource.storkctl"]
+  depends_on = [null_resource.storkctl]
 
   provisioner "remote-exec" {
     inline = [
-      # Deploy demo app
       "kubectl apply -f /tmp/apps/petclinic-db.yaml",
       "kubectl apply -f /tmp/apps/petclinic-deployment.yaml",
-      "kubectl apply -f /tmp/migration-sched.yaml"
-    ] 
+      "kubectl apply -f /tmp/migration-sched.yaml",
+    ]
   }
 }
-
 
 # resource "aws_cloudwatch_event_rule" "cluster1-delete" {
 #   name        = "cluster1-delete"
@@ -627,15 +618,15 @@ resource "null_resource" "appdeploy" {
 #   insufficient_data_actions = []
 # }
 
-
 output "master1_access" {
-    value = ["ssh ubuntu@${aws_instance.master-c1.public_ip}"]
+  value = ["ssh ubuntu@${aws_instance.master-c1.public_ip}"]
 }
 
 output "master2_access" {
-    value = ["ssh ubuntu@${aws_instance.master-c2.public_ip}"]
+  value = ["ssh ubuntu@${aws_instance.master-c2.public_ip}"]
 }
 
 output "app_loadbalancer" {
-    value = ["${aws_elb.k8s-app.dns_name}"]
+  value = [aws_elb.k8s-app.dns_name]
 }
+
