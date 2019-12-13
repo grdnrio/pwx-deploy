@@ -5,19 +5,19 @@ resource "aws_vpc" "default" {
 
 # Create an internet gateway to give our subnet access to the outside world
 resource "aws_internet_gateway" "default" {
-  vpc_id = "${aws_vpc.default.id}"
+  vpc_id = aws_vpc.default.id
 }
 
 # Grant the VPC internet access on its main route table
 resource "aws_route" "internet_access" {
-  route_table_id         = "${aws_vpc.default.main_route_table_id}"
+  route_table_id         = aws_vpc.default.main_route_table_id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = "${aws_internet_gateway.default.id}"
+  gateway_id             = aws_internet_gateway.default.id
 }
 
 # Create a subnet to launch our instances into
 resource "aws_subnet" "default" {
-  vpc_id                  = "${aws_vpc.default.id}"
+  vpc_id                  = aws_vpc.default.id
   cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = true
 }
@@ -27,7 +27,7 @@ resource "aws_subnet" "default" {
 resource "aws_security_group" "default" {
   name        = "terraform_sg_default"
   description = "Used in the terraform"
-  vpc_id      = "${aws_vpc.default.id}"
+  vpc_id      = aws_vpc.default.id
 
   ingress {
     from_port   = 22
@@ -66,10 +66,10 @@ resource "aws_security_group" "default" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    self = true
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    self      = true
   }
 
   # outbound internet access
@@ -82,13 +82,14 @@ resource "aws_security_group" "default" {
 }
 
 output "subnet" {
-  value = "${aws_subnet.default.id}"
+  value = aws_subnet.default.id
 }
 
 output "security_group" {
-  value = "${aws_security_group.default.id}"
+  value = aws_security_group.default.id
 }
 
 output "vpc" {
-  value = "${aws_vpc.default.id}"
+  value = aws_vpc.default.id
 }
+
