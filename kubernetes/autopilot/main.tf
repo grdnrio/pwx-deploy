@@ -208,7 +208,6 @@ resource "google_compute_instance" "worker" {
       "sudo cat /tmp/hosts | sudo tee --append /etc/hosts",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      
        # Install Docker CE
       "sudo apt-get remove docker docker-engine docker.io containerd runc",
       ## Set up the repository:
@@ -226,7 +225,7 @@ resource "google_compute_instance" "worker" {
       # Restart docker.
       "sudo systemctl daemon-reload",
       "sudo systemctl restart docker",
-
+      # Install K8s
       "sudo apt-get install -y kubeadm=${var.kube_version}-00 kubelet=${var.kube_version}-00 kubectl=${var.kube_version}-00",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
