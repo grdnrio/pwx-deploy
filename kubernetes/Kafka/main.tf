@@ -372,7 +372,7 @@ resource "null_resource" "install_kafka" {
   connection {
     user          = "ubuntu"
     private_key   = file(var.private_key_path)
-    host          = google_compute_instance.worker.0.network_interface[0].access_config[0].nat_ip
+    host          = google_compute_instance.master.0.network_interface[0].access_config[0].nat_ip
   }
   triggers = {
     build_number  = "${timestamp()}"
@@ -384,7 +384,7 @@ resource "null_resource" "install_kafka" {
   provisioner "remote-exec" {
     inline = [
       "kubectl create namespace strimzi",
-      "wget https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.14.0/strimzi-0.15.0.zip",
+      "wget https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip",
       "sudo apt-get install -y unzip && unzip strimzi-0.15.0.zip",
       "cd strimzi-0.15.0/ && sed -i 's/namespace: .*/namespace: strimzi/' install/cluster-operator/*RoleBinding*.yaml",
       "kubectl create namespace kafka"
