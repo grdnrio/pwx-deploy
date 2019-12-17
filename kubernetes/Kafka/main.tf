@@ -191,7 +191,7 @@ resource "google_compute_instance" "worker" {
 
   attached_disk {
     source      = "workerdisk2-c${var.clusters[count.index % length(var.clusters)]}-${var.workers[count.index % length(var.workers)]}"
-    device_name = "sdd"
+    device_name = "sdf"
     mode        = "READ_WRITE"
   }
 
@@ -292,7 +292,51 @@ resource "null_resource" "label_pools" {
   depends_on      = [google_compute_instance.master, google_compute_instance.worker]
 
 
-provisioner "remote-exec" {
+  provisioner "remote-exec" {
+    inline = [
+      "pxctl service pool update 0 --labels storage=kafka",
+      "pxctl service pool update 1 --labels storage=zookeeper"
+     ] 
+  }
+}
+
+resource "null_resource" "label_pools" {
+
+  connection {
+    user          = "ubuntu"
+    private_key   = file(var.private_key_path)
+    host          = google_compute_instance.worker.1.network_interface[0].access_config[0].nat_ip
+  }
+  triggers = {
+    build_number  = "${timestamp()}"
+  }
+
+  depends_on      = [google_compute_instance.master, google_compute_instance.worker]
+
+
+  provisioner "remote-exec" {
+    inline = [
+      "pxctl service pool update 0 --labels storage=kafka",
+      "pxctl service pool update 1 --labels storage=zookeeper"
+     ] 
+  }
+}
+
+resource "null_resource" "label_pools" {
+
+  connection {
+    user          = "ubuntu"
+    private_key   = file(var.private_key_path)
+    host          = google_compute_instance.worker.2.network_interface[0].access_config[0].nat_ip
+  }
+  triggers = {
+    build_number  = "${timestamp()}"
+  }
+
+  depends_on      = [google_compute_instance.master, google_compute_instance.worker]
+
+
+  provisioner "remote-exec" {
     inline = [
       "pxctl service pool update 0 --labels storage=kafka",
       "pxctl service pool update 1 --labels storage=zookeeper"
