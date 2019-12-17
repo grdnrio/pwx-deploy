@@ -278,7 +278,7 @@ resource "null_resource" "portworx_setup" {
   }
 }
 
-resource "null_resource" "label_pools" {
+resource "null_resource" "label_pools_1" {
 
   connection {
     user          = "ubuntu"
@@ -300,7 +300,7 @@ resource "null_resource" "label_pools" {
   }
 }
 
-resource "null_resource" "label_pools" {
+resource "null_resource" "label_pools_2" {
 
   connection {
     user          = "ubuntu"
@@ -322,7 +322,7 @@ resource "null_resource" "label_pools" {
   }
 }
 
-resource "null_resource" "label_pools" {
+resource "null_resource" "label_pools_3" {
 
   connection {
     user          = "ubuntu"
