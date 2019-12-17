@@ -266,8 +266,8 @@ resource "null_resource" "portworx_setup" {
       "kubectl apply -f /tmp/cockroach-db-1node.yaml",
       "kubectl create -f https://raw.githubusercontent.com/cockroachdb/cockroach/master/cloud/kubernetes/cluster-init.yaml",
       "chmod 775 /tmp/cockroach-loadgen.sh",
-      "sleep 60",
-      "kubectl port-forward cockroachdb-0 8080"
+      #"sleep 60",
+      #"kubectl port-forward cockroachdb-0 8080"
     ] 
   }
 } 
