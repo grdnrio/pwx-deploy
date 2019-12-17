@@ -267,11 +267,10 @@ resource "null_resource" "portworx_setup" {
 
   provisioner "remote-exec" {
     inline = [
-      "sleep 60",
+      "sleep 80",
       "kubectl apply -f 'https://install.portworx.com/${var.portworx_version}?mc=false&kbver=${var.kube_version}&b=true&c=px-demo-1&stork=true&lh=true&mon=true&st=k8s'",
       "kubectl apply -f /tmp/ap-configmap.yaml",
       "kubectl apply -f /tmp/ap-install.yaml",
-      "sleep 30",
       # Stork binary installation
       "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/${var.storkctl_version}/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl"
     ] 
@@ -289,13 +288,21 @@ resource "null_resource" "label_pools_1" {
     build_number  = "${timestamp()}"
   }
 
-  depends_on      = [google_compute_instance.master, google_compute_instance.worker]
+  depends_on      = [google_compute_instance.master, google_compute_instance.worker, null_resource.portworx_setup]
 
 
   provisioner "remote-exec" {
     inline = [
-      "pxctl service pool update 0 --labels storage=kafka",
-      "pxctl service pool update 1 --labels storage=zookeeper"
+      <<EOF
+      until pxctl status | grep 'PX is operational' 2>/dev/null
+      do
+          echo "Waiting for PX Cluster to come online...."
+          sleep 10
+      done
+      pxctl service pool update 0 --labels storage=kafka
+      pxctl service pool update 1 --labels storage=zookeeper
+      EOF
+      
      ] 
   }
 }
@@ -311,13 +318,21 @@ resource "null_resource" "label_pools_2" {
     build_number  = "${timestamp()}"
   }
 
-  depends_on      = [google_compute_instance.master, google_compute_instance.worker]
+  depends_on      = [google_compute_instance.master, google_compute_instance.worker, null_resource.portworx_setup]
 
 
   provisioner "remote-exec" {
     inline = [
-      "pxctl service pool update 0 --labels storage=kafka",
-      "pxctl service pool update 1 --labels storage=zookeeper"
+      <<EOF
+      until pxctl status | grep 'PX is operational' 2>/dev/null
+      do
+          echo "Waiting for PX Cluster to come online...."
+          sleep 10
+      done
+      pxctl service pool update 0 --labels storage=kafka
+      pxctl service pool update 1 --labels storage=zookeeper
+      EOF
+      
      ] 
   }
 }
@@ -333,13 +348,21 @@ resource "null_resource" "label_pools_3" {
     build_number  = "${timestamp()}"
   }
 
-  depends_on      = [google_compute_instance.master, google_compute_instance.worker]
+  depends_on      = [google_compute_instance.master, google_compute_instance.worker, null_resource.portworx_setup]
 
 
   provisioner "remote-exec" {
     inline = [
-      "pxctl service pool update 0 --labels storage=kafka",
-      "pxctl service pool update 1 --labels storage=zookeeper"
+      <<EOF
+      until pxctl status | grep 'PX is operational' 2>/dev/null
+      do
+          echo "Waiting for PX Cluster to come online...."
+          sleep 10
+      done
+      pxctl service pool update 0 --labels storage=kafka
+      pxctl service pool update 1 --labels storage=zookeeper
+      EOF
+      
      ] 
   }
 }
@@ -355,16 +378,16 @@ resource "null_resource" "install_kafka" {
     build_number  = "${timestamp()}"
   }
 
-  depends_on      = [google_compute_instance.master, google_compute_instance.worker]
+  depends_on      = [google_compute_instance.master, google_compute_instance.worker, null_resource.portworx_setup]
 
 
   provisioner "remote-exec" {
     inline = [
-      "kubectl create namespace kz",
-      "wget https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.14.0/strimzi-0.14.0.zip",
-      "sudo apt-get install -y unzip && unzip strimzi-0.14.0.zip",
-      "cd /strimzi && sed -i 's/namespace: .*/namespace: kz/' install/cluster-operator/*RoleBinding*.yaml",
-      
+      "kubectl create namespace strimzi",
+      "wget https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.14.0/strimzi-0.15.0.zip",
+      "sudo apt-get install -y unzip && unzip strimzi-0.15.0.zip",
+      "cd strimzi-0.15.0/ && sed -i 's/namespace: .*/namespace: strimzi/' install/cluster-operator/*RoleBinding*.yaml",
+      "kubectl create namespace kafka"
      ] 
   }
 } 

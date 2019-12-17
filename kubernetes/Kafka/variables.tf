@@ -39,12 +39,12 @@ variable "ssh_user" {
 
 variable "private_key_path" {
   description = "Path to private SSH key"
-  default     = "/Users/dan/.ssh/dw-gcp-key"
+  default     = "/home/ubuntu/gcp/dw-gcp-key"
 }
 
 variable "public_key_path" {
   description = "Path to public SSH key"
-  default     = "/Users/dan/.ssh/dw-gcp-key.pub"
+  default     = "/home/ubuntu/gcp/dw-gcp-key.pub"
 }
 
 variable "cidr_range" {
