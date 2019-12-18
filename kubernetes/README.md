@@ -7,7 +7,7 @@ This is a Terraform script to one or more Kubernetes clusters, each with a runni
 - Grafana with dashboard
 - Storkctl configured with cluster 1 as the source and cluster 2 as the destination (if multiple cluster)
 
-You need to have Terraform installed and your AWS credentials set in `~/.aws/credentials`
+You need to have Terraform >= 0.12 installed and your AWS credentials set in `~/.aws/credentials`
 
 `brew install terraform`
 

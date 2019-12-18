@@ -6,7 +6,7 @@ This is a Terraform script to one or more Kubernetes clusters, each with a runni
 - Lighthouse
 - Grafana with dashboard
 
-You need to have Terraform installed and and account created on Packet Cloud
+You need to have Terraform >= 0.12 installed and and account created on Packet Cloud
 
 `brew install terraform`
 

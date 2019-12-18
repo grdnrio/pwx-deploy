@@ -10,25 +10,26 @@
 ### Region
 variable "aws_region" {
   description = "The region to deploy the kubernetes clusters"
-  default=""
+  default     = ""
 }
 
 variable "key_name" {
   description = "Key pair name to use for SSH"
-  default = ""
+  default     = ""
 }
 
 variable "private_key_path" {
   description = "Path to private SSH key"
-  default = ""
+  default     = ""
 }
 
 variable "license_1" {
   description = "First license key for Portworx Enterprise"
-  default = ""
+  default     = ""
 }
 
 variable "license_2" {
   description = "Second license key for Portworx Enterprise DR features"
-  default = ""
+  default     = ""
 }
+

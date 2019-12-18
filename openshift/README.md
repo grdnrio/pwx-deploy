@@ -1,7 +1,7 @@
 # Portworx - OpenShift 3.X Deploy
 This is a Terraform script to deploy OpenShift 3.11 with a running Portworx cluster on AWS.
 
-You need to have Terraform installed and your AWS credentials set in `~/.aws/credentials`
+You need to have Terraform >= 0.12 installed and your AWS credentials set in `~/.aws/credentials`
 
 `brew install terraform`
 

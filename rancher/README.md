@@ -4,7 +4,7 @@
 
 This is a Terraform script to deploy a Rancher cluster on AWS. 
 
-You need to have Terraform installed and your AWS credentials set in `~/.aws/credentials`
+You need to have Terraform >= 0.12 installed and your AWS credentials set in `~/.aws/credentials`
 
 `brew install terraform`
 

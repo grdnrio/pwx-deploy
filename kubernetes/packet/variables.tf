@@ -10,23 +10,26 @@
 ### Region
 variable "auth_token" {
   description = "Your API token. Get this from the Packet Cloud dashboard"
-  default=""
+  default     = ""
 }
+
 variable "project" {
   description = "Your project name"
-  default="Portworx"
+  default     = "Portworx"
 }
+
 variable "region" {
   description = "The region to deploy the kubernetes clusters"
-  default="ams1"
+  default     = "ams1"
 }
 
 variable "worker_count" {
   description = "Number of workers"
-  default="3"
+  default     = "3"
 }
 
 variable "private_key_path" {
   description = "Path to private SSH key"
-  default = ""
+  default     = ""
 }
+
