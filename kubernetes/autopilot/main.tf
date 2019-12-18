@@ -10,7 +10,7 @@
 
 # Specify the provider and access details
 provider "google" {
-  credentials = file("~/.gcp/premium-bearing-259414-70220e45e63c.json")
+  credentials = file(var.gcp_credentials)
   project     = var.gcp_project
   region      = var.gcp_region
   zone        = var.gcp_zone

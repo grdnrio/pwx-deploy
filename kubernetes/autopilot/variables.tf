@@ -22,6 +22,11 @@ variable "gcp_project" {
   default     = "premium-bearing-259414"
 }
 
+variable "gcp_credentials" {
+  description = "The project credentials file"
+  default     = "~/.gcp/premium-bearing-259414-70220e45e63c.json"
+}
+
 variable "key_name" {
   description = "Key pair name to use for SSH"
   default     = ""
