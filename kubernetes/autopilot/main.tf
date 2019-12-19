@@ -120,7 +120,6 @@ resource "google_compute_instance" "master" {
       
       # Install Docker CE
       "sudo apt-get remove docker docker-engine docker.io containerd runc",
-      ## Set up the repository:
       ### Install packages to allow apt to use a repository over HTTPS
       "sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common",
       ### Add Docker’s official GPG key
@@ -135,7 +134,7 @@ resource "google_compute_instance" "master" {
       # Restart docker.
       "sudo systemctl daemon-reload",
       "sudo systemctl restart docker",
-
+      # Install K8s
       "sudo apt-get install -y kubeadm=${var.kube_version}-00 kubelet=${var.kube_version}-00 kubectl=${var.kube_version}-00",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
@@ -210,7 +209,6 @@ resource "google_compute_instance" "worker" {
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
        # Install Docker CE
       "sudo apt-get remove docker docker-engine docker.io containerd runc",
-      ## Set up the repository:
       ### Install packages to allow apt to use a repository over HTTPS
       "sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common",
       ### Add Docker’s official GPG key
