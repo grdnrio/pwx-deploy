@@ -117,7 +117,6 @@ resource "google_compute_instance" "master" {
       "git clone https://github.com/grdnrio/sa-toolkit.git",
       "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add",
       "sudo echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      
       # Install Docker CE
       "sudo apt-get remove docker docker-engine docker.io containerd runc",
       ### Install packages to allow apt to use a repository over HTTPS
