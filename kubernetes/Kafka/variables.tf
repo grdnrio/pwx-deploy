@@ -63,7 +63,7 @@ variable "storkctl_version" {
 }
 
 variable "kube_version" {
-  description = "Version of kubernetes to use"
+  description = "Version of portworx to use"
   default     = "1.15.6"
 }
 

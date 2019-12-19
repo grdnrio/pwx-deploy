@@ -30,41 +30,70 @@ This repo assumes you have created a project in Google Cloud, enabled billing an
 4. Change into the root of the repo and create a file to store your specific variable. Call the file `variables.tf`
 Add the following values and change the examples below to match your needs:
 ```
-### GCP Region
-gcp_region = "europe-west2"
+variable "gcp_region" {
+  description = "The region to deploy the kubernetes clusters"
+  default     = "europe-west2"
+}
+variable "gcp_zone" {
+  description = "The zone to deploy the kubernetes clusters"
+  default     = "europe-west2-c"
+}
 
-### GCP Zone
-gcp_zone = "europe-west2-c"
+variable "gcp_project" {
+  description = "The project to deploy the kubernetes clusters"
+  default     = ""
+}
 
-## Project Name in Google Cloud
-gcp_project = ""
+variable "gcp_credentials" {
+  description = "The project credentials file"
+  default     = ""
+}
 
-### Existing keypair name
-key_name = ""
+variable "key_name" {
+  description = "Key pair name to use for SSH"
+  default     = ""
+}
 
-### SSH User
-ssh_user = "ubuntu"
+variable "ssh_user" {
+  description = "ssh user to connect to instance"
+  default     = "ubuntu"
+}
 
-### Private ssh key for keypair path
-private_key_path = ""
+variable "private_key_path" {
+  description = "Path to private SSH key"
+  default     = ""
+}
 
-### Public ssh key for keypair path
-public_key_path = ""
+variable "public_key_path" {
+  description = "Path to public SSH key"
+  default     = ""
+}
 
-### Number of clusters
-clusters = ["1"]
+variable "cidr_range" {
+  description = "CIDR Range to use"
+  default     = "10.127.0.0/20"
+}
 
-### Stork version
-stork_version = latest
+variable "stork_version" {
+  description = "Version of Stork to use"
+  default     = "latest"
+}
 
-### Storkctl version
-storkctl_version = latest
+variable "storkctl_version" {
+  description = "Version of storkctl to use"
+  default     = "latest"
+}
 
-### Portworx version
-portworx_version = 2.3.1
+variable "kube_version" {
+  description = "Version of kubernetes to use"
+  default     = "1.15.6"
+}
 
-### Kubernetes version
-kube_version = 1.15.6
+variable "portworx_version" {
+  description = "Version of portworx to use"
+  default     = "2.3.1"
+}
+
 ```
 Note that the existing keypair name is a stored SSH key in your GCP Project. Make sure it exists in your chosen region.
 
