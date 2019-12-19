@@ -23,7 +23,11 @@ This repo assumes you have created a project in Google Cloud, enabled billing an
 ## Instructions
 1. Clone the repo
 
-2. Change into the root of the repo and create a file to store your specific variable. Call the file `terraform.tfvars`
+2. Create a GCP project, make a note of the name. You will need to add it to the variables file below.
+
+3. Generate a gcp credentials json file and save locally. You will need to add it to the variables file below.
+
+4. Change into the root of the repo and create a file to store your specific variable. Call the file `variables.tf`
 Add the following values and change the examples below to match your needs:
 ```
 ### GCP Region
@@ -73,16 +77,19 @@ Note that the existing keypair name is a stored SSH key in your GCP Project. Mak
 5. Run the deployment
 `terraform apply --auto-approve`
 
-6. Apply the AutoPilot volume resize rule on the master node
-`kubectl apply -f /tmp/ap-postgres-rule.yaml`
-
 ## Environment
-- There is a deployment called 'pgbench' edit this deployment and increase the replicas to '1' to start filling the volumes
-- There are deployment options for CockroachDB
+- There is a postgres benchmark deployment called 'pgbench', edit this deployment and increase the replicas to '1' to start filling the volumes
+- There are deployment options for CockroachDB, the 1 node instance is running by default
     - `/tmp/cockroach-db-1node.yaml` - deploys 1 instance of CockroachDB with 3 PX replicas
     - `/tmp/cockroach-db-3node.yaml` - deploys 3 instance of CockroachDB with their own volumes, 1 PX replica each
-    - `/tmp/ap-cockroach-rule.yaml` - deploys an AutoPilot rule to increase the volume size by 50% when the utilisation hits 50%
-    - `/tmp/cockroach-loadgen.sh` - starts filling the database
+- There are two AutoPilot rules applied to handle growing the PVCs
+    - `/tmp/ap-cockroach-rule.yaml` - deploys an AutoPilot rule to increase the volume size by 30% when the utilisation hits 50%
+    - `/tmp/ap-postgres-rule` - deploys an AutoPilot rule to increase the volume size by 50% when the utilisation hits 50%
+- Two scripts are provided
+    - `/tmp/cockroach-loadgen.sh` - starts filling the cockroachdb storage
+    - `watch-autopilot.sh` - print AutoPilot events to the terminal
+- There is a Grafana dashboard, this is a stripped down version of the PX Volume Dashboard to improve performance
+    - `/tmp/ap-dashboard.json`
 - kube config is set on the masters, no sudo required
 - storkctl is setup on the masters
 - there's a repo of demo app manifests pulled onto each master

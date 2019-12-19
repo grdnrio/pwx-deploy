@@ -252,22 +252,28 @@ resource "null_resource" "portworx_setup" {
 
   provisioner "remote-exec" {
     inline = [
-      "sleep 60",
+      # Install Portworx
+      "kubectl wait --for=condition=ready pod -l app=prometheus-operator -n kube-system --timeout 10m",
       "kubectl apply -f 'https://install.portworx.com/${var.portworx_version}?mc=false&kbver=${var.kube_version}&b=true&c=px-demo-1&stork=true&lh=true&mon=true&st=k8s'",
       "kubectl apply -f /tmp/ap-configmap.yaml",
       "kubectl apply -f /tmp/ap-install.yaml",
-      #Install Postgres Deployment
-      "kubectl apply -f /tmp/postgres-deployment.yaml",
-      "sleep 30",
-      "kubectl apply -f /tmp/ap-postgres-rule.yaml",
+      "chmod 775 /tmp/watch-autopilot.sh",
       # Stork binary installation
       "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/${var.storkctl_version}/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
-      # Install CockroachDB Instance
+      #Install Postgres Deployment
+      "kubectl apply -f /tmp/postgres-deployment.yaml",
+      # Install CockroachDB Deployment
       "kubectl apply -f /tmp/cockroach-db-1node.yaml",
       "kubectl create -f https://raw.githubusercontent.com/cockroachdb/cockroach/master/cloud/kubernetes/cluster-init.yaml",
       "chmod 775 /tmp/cockroach-loadgen.sh",
-      #"sleep 60",
-      #"kubectl port-forward cockroachdb-0 8080"
+      # Apply AutoPilot rules
+      "kubectl wait --for=condition=ready pod -l name=autopilot -n kube-system --timeout 10m",
+      "kubectl apply -f /tmp/ap-cockroach-rule.yaml",
+      "kubectl apply -f /tmp/ap-postgres-rule.yaml",
+      # Patch Grafana and Prometheus for external access
+      "kubectl wait --for=condition=ready pod -l app=grafana -n kube-system --timeout 10m",
+      "kubectl patch svc grafana -n kube-system --type='json' -p '[{\"op\":\"replace\",\"path\":\"/spec/type\",\"value\":\"NodePort\"}]'",
+      "kubectl patch svc prometheus -n kube-system --type='json' -p '[{\"op\":\"replace\",\"path\":\"/spec/type\",\"value\":\"NodePort\"}]'",
     ] 
   }
 } 

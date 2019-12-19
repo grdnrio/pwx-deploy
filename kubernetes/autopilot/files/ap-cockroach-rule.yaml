@@ -22,5 +22,5 @@ spec:
     params:
       # resize volume by scalepercentage of current size
       scalepercentage: "20"
-      # volume capacity should not exceed 400GiB
+      # volume capacity should not exceed xGiB
       maxsize: "30Gi"
