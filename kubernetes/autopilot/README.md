@@ -1,4 +1,4 @@
-# Portworx - AutoPilot on GCP
+# Portworx - AutoPilot & PX-Backup on GCP
 This is a Terraform script to one Kubernetes cluster, with Portworx, AutoPilot, AutoPilot Rules and a Postgres Benchmark deployment that will quickly consume space on its PV.
 
 ## Requirements
@@ -107,6 +107,13 @@ Note that the existing keypair name is a stored SSH key in your GCP Project. Mak
 `terraform apply --auto-approve`
 
 ## Environment
+- kube config is set on the masters, no sudo required
+- storkctl is setup on the masters
+- there's a repo of demo app manifests pulled onto each master
+
+## AutoPilot Demo
+There are options to use postgres or cockroachdb as a demo. Using both will cause slowdowns.
+
 - There is a postgres benchmark deployment called 'pgbench', edit this deployment and increase the replicas to '1' to start filling the volumes
 - There are deployment options for CockroachDB, the 1 node instance is running by default
     - `/tmp/cockroach-db-1node.yaml` - deploys 1 instance of CockroachDB with 3 PX replicas
@@ -119,6 +126,33 @@ Note that the existing keypair name is a stored SSH key in your GCP Project. Mak
     - `watch-autopilot.sh` - print AutoPilot events to the terminal
 - There is a Grafana dashboard, this is a stripped down version of the PX Volume Dashboard to improve performance
     - `/tmp/ap-dashboard.json`
-- kube config is set on the masters, no sudo required
-- storkctl is setup on the masters
-- there's a repo of demo app manifests pulled onto each master
+
+## PX-Backup Demo
+This will deploy a minio s3 store into a 'minio' namespace and a petclinic sample app into a 'petclinic' namespace
+
+- Deploy minio 
+    - `kubectl apply -f /tmp/px-backup/minio-deployment.yaml`
+- Deploy petclinic sample app
+    - `kubectl apply -f /tmp/px-backup/petclinic-deployment.yaml`
+- Log onto minio using minio/minio123 and create a bucket called 'portworx'
+- Edit `/tmp/px-backup/backupLocation.yaml` and update the endpoint to your minio instance
+- Apply the backup location 
+    -`kubectl apply -f /tmp/px-backup/backupLocation.yaml`
+- Create a backup of the petclinic namespace
+    - `kubectl apply -f /tmp/px-backup/applicationBackup.yaml`
+- Check the backup was successful
+    - `kubectl describe applicationbackups -n petclinic`
+- Delete the petclinic namespace
+    - `kubectl delete ns petclinic`
+- Recreate the namespace
+    - `kubectl create ns petclinic`
+- Apply the backup location
+    - `kubectl apply -f /tmp/px-backup/backupLocation.yaml`
+- Watch for the backup to be created
+    - `watch kubectl get applicationbackups -n petclinic`
+- Make a note of the backup name (it will be appended with a timestamp)
+- Edit `/tmp/px-backup/applicationRestore.yaml` and add in the backupName
+- Apply the application restore
+    - `kubectl apply -f /tmp/px-backup/applicationRestore.yaml`
+- Watch the data and resources get re-created
+    - `watch kubectl get all -n petclinic`

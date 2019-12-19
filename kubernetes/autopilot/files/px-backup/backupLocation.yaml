@@ -13,5 +13,5 @@ location:
     region: default
     accessKeyID: minio
     secretAccessKey: minio123
-    endpoint: "http://35.242.152.202:32305"
+    endpoint: "http://xxxx:9000"
     disableSSL: true
