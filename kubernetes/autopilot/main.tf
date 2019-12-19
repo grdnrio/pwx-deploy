@@ -264,7 +264,7 @@ resource "null_resource" "portworx_setup" {
       "kubectl create -f https://raw.githubusercontent.com/cockroachdb/cockroach/master/cloud/kubernetes/cluster-init.yaml",
       "chmod 775 /tmp/cockroach-loadgen.sh",
       # Apply AutoPilot rules
-      "echo THIS STEP WAITS FOR AUTOPILOT TO BE READY - CAN TAKE UP TO 7 MINS"
+      "echo THIS STEP WAITS FOR AUTOPILOT TO BE READY - CAN TAKE UP TO 7 MINS",
       "kubectl wait --for=condition=ready pod -l name=autopilot -n kube-system --timeout 10m",
       "kubectl apply -f /tmp/ap-cockroach-rule.yaml",
       "kubectl apply -f /tmp/ap-postgres-rule.yaml",
