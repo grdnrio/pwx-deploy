@@ -17,3 +17,4 @@ This envionrment is suitable for a standard Kuberntes demo.
 3. Single Rancger cluster - Portworx is not pre-installed. [Rancher](rancher)
 4. Single Swarm cluster with Portworx pre-installed [Docker Swarm](swarm)
 5. Portworx Metro - 2 K8s clusters with a single Portworx stretch [PX Metro](kubernetes/px-metro)
+6. Autopilot - 1 K8s cluster deployed on GCP with AutoPilot, example rules and postgres benchmark [AutoPilot](kubernetes/autopilot)
