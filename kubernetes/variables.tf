@@ -40,6 +40,6 @@ variable "kube_version" {
 
 variable "portworx_version" {
   description = "Version of kubernetes to use"
-  default     = "2.1.2"
+  default     = "2.3.1"
 }
 
