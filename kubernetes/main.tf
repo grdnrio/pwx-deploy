@@ -131,14 +131,8 @@ resource "aws_instance" "master" {
       "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
       "kubectl apply -f https://2.0.docs.portworx.com/samples/k8s/portworx-pxc-operator.yaml",
       "sleep 60",
-      "kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/prometheus-operator-crd/alertmanager.crd.yaml",
-      "kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/prometheus-operator-crd/prometheus.crd.yaml",
-      "kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/prometheus-operator-crd/prometheusrule.crd.yaml",
-      "kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/prometheus-operator-crd/servicemonitor.crd.yaml",
-      "sleep 30",
       "kubectl create secret generic alertmanager-portworx --from-file=/tmp/portworx-pxc-alertmanager.yaml -n kube-system",
       "kubectl apply -f 'https://install.portworx.com/${var.portworx_version}?mc=false&kbver=${var.kube_version}&b=true&c=px-demo-${count.index + 1}&stork=true&lh=true&mon=true&st=k8s'",
-      "kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml",
       "sudo curl -s http://openstorage-stork.s3-website-us-east-1.amazonaws.com/storkctl/${var.storkctl_version}/linux/storkctl -o /usr/bin/storkctl && sudo chmod +x /usr/bin/storkctl",
     ]
   }
@@ -277,6 +271,30 @@ else
 fi
 EOF
       ,
+    ]
+  }
+}
+
+resource "null_resource" "monitoring" {
+  connection {
+    user        = "ubuntu"
+    private_key = file(var.private_key_path)
+    host        = aws_instance.master[0].public_ip
+  }
+  triggers = {
+    build_number = timestamp()
+  }
+
+  depends_on = [
+    aws_instance.worker,
+    aws_instance.master,
+  ]
+
+  provisioner "remote-exec" {
+    inline = [
+      "kubectl apply -f /tmp/service-monitor.yaml",
+      "kubectl apply -f https://docs.portworx.com/samples/k8s/grafana/prometheus-rules.yaml",
+      "kubectl apply -f https://docs.portworx.com/samples/k8s/grafana/prometheus-cluster.yaml"
     ]
   }
 }
