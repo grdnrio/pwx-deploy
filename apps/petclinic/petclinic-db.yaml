@@ -51,6 +51,9 @@ metadata:
   name: petclinic-db-mysql
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: petclinic-db-mysql
   strategy:
     rollingUpdate:
       maxSurge: 1
