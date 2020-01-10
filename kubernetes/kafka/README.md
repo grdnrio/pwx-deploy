@@ -51,16 +51,16 @@ public_key_path = ""
 clusters = ["1"]
 
 ### Stork version
-stork_version = latest
+stork_version = "latest"
 
 ### Storkctl version
-storkctl_version = latest
+storkctl_version = "latest"
 
 ### Portworx version
-portworx_version = 2.3.1
+portworx_version = "2.3.2"
 
 ### Kubernetes version
-kube_version = 1.15.6
+kube_version = "1.15.7"
 ```
 Note that the existing keypair name is a stored SSH key in your GCP Project. Make sure it exists in your chosen region.
 

@@ -27,19 +27,19 @@ key_name = "jgardiner"
 private_key_path = "/Users/joe/.ssh/id_rsa"
 
 ### Number of clusters
-clusters = ["1", "n"]
+clusters = ["1", "2"] ## or ["1"] for single cluster, or ["1", "2", .., "n"] where n is number of clusters
 
 ### Stork version
-stork_version = latest
+stork_version = "latest"
 
 ### Storkctl version
-storkctl_version = latest
+storkctl_version = "latest"
 
 ### Portworx version
-portworx_version = 2.1.2
+portworx_version = "2.3.2"
 
 ### Kubernetes version
-kube_version = 1.15.3
+kube_version = "1.15.7"
 ```
 Note that the existing keypair name is a stored SSH keypair on AWS. Make sure it exists in your chosen region.
 
