@@ -252,6 +252,7 @@ resource "null_resource" "storkctl" {
   provisioner "remote-exec" {
     inline = [
       <<EOF
+sleep 30
 until ssh -oStrictHostKeyChecking=no worker-c2-1 pxctl status | grep 'PX is operational'
 do
     echo "Waiting for PX Cluster to come online...."
@@ -275,7 +276,7 @@ EOF
   }
 }
 
-resource "null_resource" "monitoring" {
+/* resource "null_resource" "monitoring" {
   connection {
     user        = "ubuntu"
     private_key = file(var.private_key_path)
@@ -297,7 +298,7 @@ resource "null_resource" "monitoring" {
       "kubectl apply -f https://docs.portworx.com/samples/k8s/grafana/prometheus-cluster.yaml"
     ]
   }
-}
+} */
 
 output "master_access" {
   value = ["ssh ubuntu@${aws_instance.master[0].public_ip}"]
