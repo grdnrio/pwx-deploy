@@ -1,0 +1,16 @@
+[0m[1mmodule.aws_networking.aws_vpc.default: Refreshing state... [id=vpc-0481e54bdd9635eaf][0m
+[0m[1mdata.aws_ami.centos: Refreshing state...[0m
+[0m[1mmodule.aws_networking.aws_internet_gateway.default: Refreshing state... [id=igw-008c73bd008a33d31][0m
+[0m[1mmodule.aws_networking.aws_subnet.default: Refreshing state... [id=subnet-02dd465f53f06420f][0m
+[0m[1mmodule.aws_networking.aws_security_group.default: Refreshing state... [id=sg-0637e44e04cffa210][0m
+[0m[1mmodule.aws_networking.aws_route.internet_access: Refreshing state... [id=r-rtb-05699ed78cc3ffb611080289494][0m
+[0m[1maws_instance.master: Refreshing state... [id=i-0c13f22a34dd48b5f][0m
+[0m[1maws_instance.worker[2]: Refreshing state... [id=i-00f7c3a5a3e5cc54b][0m
+[0m[1maws_instance.worker[0]: Refreshing state... [id=i-07f85bcf8bfd14c65][0m
+[0m[1maws_instance.worker[1]: Refreshing state... [id=i-0479f64db4bd146e4][0m
+[0m[1mnull_resource.inventory: Refreshing state... [id=7534978258871450948][0m
+[0m[1mnull_resource.ansible: Refreshing state... [id=694631606866485178][0m
+[0m[1mnull_resource.ansible: Destroying... [id=694631606866485178][0m[0m
+[0m[1mnull_resource.ansible: Destruction complete after 0s[0m[0m
+[0m[1mnull_resource.inventory: Destroying... [id=7534978258871450948][0m[0m
+[0m[1mnull_resource.inventory: Destruction complete after 0s[0m[0m
