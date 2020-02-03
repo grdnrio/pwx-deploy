@@ -1,0 +1,32 @@
+---
+- hosts: nodes
+  gather_facts: no
+  pre_tasks:
+    - name: install python2
+      yum:
+        name: python
+        state: installed
+  tasks:
+  - name: install the latest version of podman
+    yum:
+      name: podman
+      state: latest
+  - name: install the latest version of NetworkManager
+    yum:
+      name: NetworkManager
+      state: installed
+  - name: enable network-manager
+    service:
+      name: NetworkManager
+      enabled: yes
+      state: started
+  - name: Add repository
+    yum_repository:
+       name: okd
+       description: OKD 311 repo
+       baseurl: https://rpms.svc.ci.openshift.org/openshift-origin-v3.11/
+       gpgcheck: no
+  - name: install the latest version of CRI-O
+    yum:
+      name: cri-tools
+      state: latest
