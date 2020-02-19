@@ -134,6 +134,7 @@ resource "google_compute_instance" "master" {
       "sudo systemctl daemon-reload",
       "sudo systemctl restart docker",
       # Install K8s
+      # Fix if we need to deploy kube older than 1.14 "sudo apt install kubernetes-cni=0.6.0-00",
       "sudo apt-get install -y kubeadm=${var.kube_version}-00 kubelet=${var.kube_version}-00 kubectl=${var.kube_version}-00",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
@@ -223,6 +224,7 @@ resource "google_compute_instance" "worker" {
       "sudo systemctl daemon-reload",
       "sudo systemctl restart docker",
       # Install K8s
+      "sudo apt install kubernetes-cni=0.6.0-00",
       "sudo apt-get install -y kubeadm=${var.kube_version}-00 kubelet=${var.kube_version}-00 kubectl=${var.kube_version}-00",
       "sudo systemctl enable docker kubelet && sudo systemctl restart docker kubelet",
       "sudo kubeadm config images pull",
@@ -272,6 +274,9 @@ resource "null_resource" "portworx_setup" {
       "kubectl wait --for=condition=ready pod -l app=grafana -n kube-system --timeout 10m",
       "kubectl patch svc grafana -n kube-system --type='json' -p '[{\"op\":\"replace\",\"path\":\"/spec/type\",\"value\":\"NodePort\"}]'",
       "kubectl patch svc prometheus -n kube-system --type='json' -p '[{\"op\":\"replace\",\"path\":\"/spec/type\",\"value\":\"NodePort\"}]'",
+      # Deploy minio and petclinic
+      "kubectl apply -f /tmp/px-backup/minio-deployment.yaml",
+      "kubectl apply -f /tmp/px-backup/petclinic-deployment.yaml"
     ] 
   }
 } 
