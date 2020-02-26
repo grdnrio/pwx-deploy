@@ -1,4 +1,6 @@
 # Portworx Demo / Testing Deployment
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgrdnrio%2Fpwx-deploy.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgrdnrio%2Fpwx-deploy?ref=badge_shield)
+
 This repo provides a number of Terraform templates for deploying various container schedulers with Portworx.  Check each scheduler directory for specific requirements. All deployments require the following.
 
 ## Pre-requisites
@@ -18,3 +20,7 @@ This envionrment is suitable for a standard Kuberntes demo.
 4. Single Swarm cluster with Portworx pre-installed [Docker Swarm](swarm)
 5. Portworx Metro - 2 K8s clusters with a single Portworx stretch [PX Metro](kubernetes/px-metro)
 6. Autopilot - 1 K8s cluster deployed on GCP with AutoPilot, example rules and postgres benchmark [AutoPilot](kubernetes/autopilot)
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgrdnrio%2Fpwx-deploy.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgrdnrio%2Fpwx-deploy?ref=badge_large)
